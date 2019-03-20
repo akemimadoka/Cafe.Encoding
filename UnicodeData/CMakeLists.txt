@@ -1,4 +1,4 @@
-set(CAFE_INCLUDE_RUNTIME_UNICODE_DATA ON CACHE BOOL "Include runtime unicode data")
+﻿set(CAFE_INCLUDE_RUNTIME_UNICODE_DATA ON CACHE BOOL "Include runtime unicode data")
 
 # 暂时无用
 set(CAFE_INCLUDE_COMPILE_TIME_UNICODE_DATA OFF CACHE BOOL "Include compile time unicode data")
@@ -27,9 +27,9 @@ add_library(Cafe.Encoding.UnicodeData ${SOURCE_FILES} ${HEADERS})
 # set_property(TARGET Cafe.Encoding.UnicodeData
 #     PROPERTY COMPILE_FLAGS ${CompileOptions})
 
-# target_include_directories(Cafe.Encoding.UnicodeData PUBLIC
-#     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#     $<INSTALL_INTERFACE:include>)
+target_include_directories(Cafe.Encoding.UnicodeData PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>)
 
 target_compile_features(Cafe.Encoding.UnicodeData PUBLIC cxx_std_17)
 
