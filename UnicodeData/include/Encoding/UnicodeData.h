@@ -83,10 +83,5 @@ namespace Cafe::Encoding
 #include "Impl/UnicodeData.h"
 
 	template <CodePointType CodePointValue>
-	struct IsValidUnicodeDataTrait : std::is_default_constructible<UnicodeData<CodePointValue>>
-	{
-	};
-
-	template <CodePointType CodePointValue>
-	constexpr bool IsValidUnicodeData = IsValidUnicodeDataTrait<CodePointValue>::value;
+	constexpr bool IsValidUnicodeData = Core::Misc::IsComplete<UnicodeData<CodePointValue>>;
 } // namespace Cafe::Encoding
