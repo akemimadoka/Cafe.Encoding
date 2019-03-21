@@ -13,19 +13,16 @@ set(HEADERS
     include/Encoding/UnicodeData.h
     include/Encoding/UnicodeDataTypes.h)
 
+# 本项目编译时携带调试信息会严重影响编译速度，在有更好处理方案之前先去除相关 flag
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
+    string(REPLACE "/Zi" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    string(REPLACE "/Zi" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+else()
+    string(REPLACE "-g" "" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+    string(REPLACE "-g" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+endif()
+
 add_library(Cafe.Encoding.UnicodeData ${SOURCE_FILES} ${HEADERS})
-
-# get_property(CompileOptions
-#     TARGET Cafe.Encoding.UnicodeData
-#     PROPERTY COMPILE_FLAGS)
-
-# message(STATUS "CompileOptions: ${CompileOptions}")
-
-# # 移除调试信息
-# list(REMOVE_ITEM CompileOptions "-g")
-
-# set_property(TARGET Cafe.Encoding.UnicodeData
-#     PROPERTY COMPILE_FLAGS ${CompileOptions})
 
 target_include_directories(Cafe.Encoding.UnicodeData PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

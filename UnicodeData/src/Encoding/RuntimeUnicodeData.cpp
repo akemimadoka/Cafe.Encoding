@@ -93,7 +93,7 @@ namespace Cafe::Encoding
 
 	namespace RuntimeUnicodeData
 	{
-		using UnderlyingData = Detail::UnicodeDataArrayGenerator<std::index_sequence<
+		using UnderlyingData = Detail::UnicodeDataArrayGenerator<std::integer_sequence<CodePointType,
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
@@ -105,92 +105,92 @@ namespace Cafe::Encoding
 		bool IsInUnicodeData(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::InUnicodeDataArray[CodePointMap[codePoint]];
+			return codePoint == 0 || Detail::CodePointMap[codePoint] != 0;
 		}
 
 		StringView<CodePage::Utf8> GetCharacterName(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::CharacterNameArray[CodePointMap[codePoint]];
+			return UnderlyingData::CharacterNameArray[Detail::CodePointMap[codePoint]];
 		}
 
 		GeneralCategory GetGeneralCategory(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::GeneralCategoryValueArray[CodePointMap[codePoint]];
+			return UnderlyingData::GeneralCategoryValueArray[Detail::CodePointMap[codePoint]];
 		}
 
 		CanonicalCombiningClasses GetCanonicalCombiningClasses(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::CanonicalCombiningClassesValueArray[CodePointMap[codePoint]];
+			return UnderlyingData::CanonicalCombiningClassesValueArray[Detail::CodePointMap[codePoint]];
 		}
 
 		BidirectionalCategory GetBidirectionalCategory(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::BidirectionalCategoryValueArray[CodePointMap[codePoint]];
+			return UnderlyingData::BidirectionalCategoryValueArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<std::pair<DecompositionTag, gsl::span<const CodePointType>>> const&
 		GetDecompositionMapping(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::DecompositionMappingArray[CodePointMap[codePoint]];
+			return UnderlyingData::DecompositionMappingArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<std::uint8_t> const& GetDecimalDigitValue(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::DecimalDigitValueArray[CodePointMap[codePoint]];
+			return UnderlyingData::DecimalDigitValueArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<std::uint8_t> const& GetDigitValue(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::DigitValueArray[CodePointMap[codePoint]];
+			return UnderlyingData::DigitValueArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<Core::Misc::Ratio<unsigned>> const& GetNumeric(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::NumericArray[CodePointMap[codePoint]];
+			return UnderlyingData::NumericArray[Detail::CodePointMap[codePoint]];
 		}
 
 		Mirrored IsMirrored(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::MirroredArray[CodePointMap[codePoint]];
+			return UnderlyingData::MirroredArray[Detail::CodePointMap[codePoint]];
 		}
 
 		StringView<CodePage::Utf8> GetUnicodeName(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::UnicodeNameArray[CodePointMap[codePoint]];
+			return UnderlyingData::UnicodeNameArray[Detail::CodePointMap[codePoint]];
 		}
 
 		StringView<CodePage::Utf8> GetCommentField(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::CommentFieldArray[CodePointMap[codePoint]];
+			return UnderlyingData::CommentFieldArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<CodePointType> const& GetUppercaseMapping(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::UppercaseMappingArray[CodePointMap[codePoint]];
+			return UnderlyingData::UppercaseMappingArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<CodePointType> const& GetLowercaseMapping(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::LowercaseMappingArray[CodePointMap[codePoint]];
+			return UnderlyingData::LowercaseMappingArray[Detail::CodePointMap[codePoint]];
 		}
 
 		std::optional<CodePointType> const& GetTitlecaseMapping(CodePointType codePoint) noexcept
 		{
 			assert(codePoint <= MaxValidCodePoint);
-			return UnderlyingData::TitlecaseMappingArray[CodePointMap[codePoint]];
+			return UnderlyingData::TitlecaseMappingArray[Detail::CodePointMap[codePoint]];
 		}
 	} // namespace RuntimeUnicodeData
 } // namespace Cafe::Encoding
