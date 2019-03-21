@@ -364,6 +364,16 @@ namespace Cafe::Encoding
 			return StringView{ m_Span.subspan(begin, size) };
 		}
 
+		constexpr gsl::span<const CharType, Extent> GetSpan() const noexcept
+		{
+			return m_Span;
+		}
+
+		constexpr const_pointer GetData() const noexcept
+		{
+			return m_Span.data();
+		}
+
 	private:
 		gsl::span<const CharType, Extent> m_Span;
 	};
