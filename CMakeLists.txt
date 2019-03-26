@@ -1,4 +1,4 @@
-set(CAFE_INCLUDE_ENCODING_LIST "UTF-8" CACHE STRING "List of include encodings")
+set(CAFE_INCLUDE_ENCODING_LIST "UTF-8;UTF-16;UTF-32" CACHE STRING "List of include encodings")
 set(CAFE_INCLUDE_UNICODE_DATA ON CACHE STRING "Include unicode data")
 set(CAFE_INCLUDE_ENCODING_TEST ON CACHE BOOL "Include encoding test")
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodePage.h"
+#include <Misc/TypeTraits.h>
 #include <gsl/span>
 
 namespace Cafe::Encoding
@@ -18,17 +19,6 @@ namespace Cafe::Encoding
 
 	namespace Detail
 	{
-		template <bool, typename Base>
-		struct DeriveIf
-		{
-		};
-
-		template <typename Base>
-		struct DeriveIf<true, Base> : Base
-		{
-			using Base::Base;
-		};
-
 		struct AdvanceCountInfo
 		{
 			explicit constexpr AdvanceCountInfo(std::size_t advanceCount = 1) noexcept
@@ -60,11 +50,11 @@ namespace Cafe::Encoding
 	// 相互转换，以便扩展传递额外信息
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>
-	    : Detail::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
-	                       Detail::AdvanceCountInfo>
+	    : Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
+	                           Detail::AdvanceCountInfo>
 	{
-		using Base = Detail::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
-		                              Detail::AdvanceCountInfo>;
+		using Base = Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
+		                                  Detail::AdvanceCountInfo>;
 
 		using ResultType = std::conditional_t<
 		    CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth,
