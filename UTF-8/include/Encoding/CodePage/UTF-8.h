@@ -84,7 +84,7 @@ namespace Cafe::Encoding
 					const auto result = static_cast<CodePointType>(codeValue);
 
 					std::forward<OutputReceiver>(receiver)(
-					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 1 });
+					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 1u });
 				}
 				else if ((codeValue & 0xC0) == 0x80)
 				{
@@ -96,7 +96,8 @@ namespace Cafe::Encoding
 					if (size < 2)
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{ 0, 2 - size });
+						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{
+						        0, static_cast<std::size_t>(2 - size) });
 						return;
 					}
 
@@ -105,14 +106,15 @@ namespace Cafe::Encoding
 					    static_cast<CodePointType>(((codeValue & 0x1F) << 6) + (secondCodeUnit & 0x3F));
 
 					std::forward<OutputReceiver>(receiver)(
-					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 2 });
+					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 2u });
 				}
 				else if ((codeValue & 0xF0) == 0xE0)
 				{
 					if (size < 3)
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{ 0, 3 - size });
+						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{
+						        0, static_cast<std::size_t>(3 - size) });
 						return;
 					}
 
@@ -121,7 +123,7 @@ namespace Cafe::Encoding
 					const auto result = static_cast<CodePointType>(
 					    ((codeValue & 0x0F) << 12) + ((secondCodeUnit & 0x3F) << 6) + (thirdCodeUnit & 0x3F));
 
-					if (result >= 0x00D800 && result <= 0x00DFFF)
+					if (result >= 0xD800 && result <= 0xDFFF)
 					{
 						// 这不是一个仅限 UTF-8 会有的情况，是否可以通用地处理？
 						std::forward<OutputReceiver>(receiver)(
@@ -130,7 +132,7 @@ namespace Cafe::Encoding
 					else
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 3 });
+						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 3u });
 					}
 				}
 				else if ((codeValue & 0xF8) == 0xF0 && codeValue <= 0xF4)
@@ -138,7 +140,8 @@ namespace Cafe::Encoding
 					if (size < 4)
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{ 0, 4 - size });
+						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Incomplete>{
+						        0, static_cast<std::size_t>(4 - size) });
 						return;
 					}
 
@@ -150,7 +153,7 @@ namespace Cafe::Encoding
 					    ((thirdCodeUnit & 0x3F) << 6) + (fourthCodeUnit & 0x3F));
 
 					std::forward<OutputReceiver>(receiver)(
-					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 4 });
+					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 4u });
 				}
 				else
 				{

@@ -21,6 +21,18 @@ TEST_CASE("Cafe.Encoding.UTF-32", "[Encoding][UTF-32]")
 				    REQUIRE(false);
 			    }
 		    });
+
+		CodePage::CodePageTrait<CodePage::Utf32LittleEndian>::ToCodePoint(
+		    U'\x24B62', [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.Result == 0x24B62);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
 	}
 
 	SECTION("CodePoint to UTF-32 BE")
@@ -31,6 +43,18 @@ TEST_CASE("Cafe.Encoding.UTF-32", "[Encoding][UTF-32]")
 			    {
 				    const auto span = gsl::as_bytes(gsl::make_span(&result.Result, 1));
 				    REQUIRE(std::memcmp(span.data(), "\x00\x02\x4B\x62", 4) == 0);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
+
+		CodePage::CodePageTrait<CodePage::Utf32BigEndian>::ToCodePoint(
+		    U'\x624B0200', [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.Result == 0x24B62);
 			    }
 			    else
 			    {

@@ -25,6 +25,8 @@ namespace Cafe::Encoding
 					              std::endian::native == std::endian::big);
 					return std::endian::native == std::endian::little;
 #else
+					static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ||
+					              __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__);
 					return __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 #endif
 				}
@@ -36,7 +38,13 @@ namespace Cafe::Encoding
 				{
 					if constexpr (NeedSwapEndian)
 					{
+#if defined(_MSC_VER)
+						return _byteswap_ushort(value);
+#elif defined(__GNUC__)
+						return __builtin_bswap16(value);
+#else
 						return value << 8 | ((value & 0xFF00) >> 8);
+#endif
 					}
 					else
 					{
@@ -86,13 +94,13 @@ namespace Cafe::Encoding
 						break;
 					case -1:
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ 0, 1 });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ -1 });
 						break;
 					case 1:
 					{
 						const auto result = static_cast<CodePointType>(MaySwapEndian(mayBeLeadSurrogate));
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 1 });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 1u });
 						break;
 					}
 					case 2:
@@ -112,7 +120,7 @@ namespace Cafe::Encoding
 						    (((leadSurrogate - 0xD800) << 10) + (trailSurrogate - 0xDC00)) + 0x10000);
 
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 1 });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 2u });
 						break;
 					}
 					}
@@ -138,7 +146,7 @@ namespace Cafe::Encoding
 						const auto processedCodePoint = codePoint - 0x10000;
 						const CharType result[] = {
 							MaySwapEndian(((processedCodePoint & 0b11111111110000000000) >> 10) + 0xD800),
-							MaySwapEndian((processedCodePoint & 0b1111111111) + 0xDC00)
+							MaySwapEndian((processedCodePoint & 0b00000000001111111111) + 0xDC00)
 						};
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<CodePoint, Utf16, EncodingResultCode::Accept>{

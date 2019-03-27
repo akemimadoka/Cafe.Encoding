@@ -24,6 +24,8 @@ namespace Cafe::Encoding
 					              std::endian::native == std::endian::big);
 					return std::endian::native == std::endian::little;
 #else
+					static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ||
+					              __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__);
 					return __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
 #endif
 				}
@@ -31,12 +33,19 @@ namespace Cafe::Encoding
 
 				static constexpr bool NeedSwapEndian = (Utf32 == Utf32BigEndian) == IsLittleEndian;
 
+				/// @remark 假设了平台并非是混合端序的
 				[[nodiscard]] static constexpr char32_t MaySwapEndian(char32_t value) noexcept
 				{
 					if constexpr (NeedSwapEndian)
 					{
+#if defined(_MSC_VER)
+						return _byteswap_ulong(value);
+#elif defined(__GNUC__)
+						return __builtin_bswap32(value);
+#else
 						return value << 24 | ((value & 0x0000FF00) << 8) |
 						       ((value & 0x00FF0000) >> 8 | ((value & 0xFF000000) >> 24));
+#endif
 					}
 					else
 					{
@@ -49,7 +58,7 @@ namespace Cafe::Encoding
 
 				static constexpr bool IsVariableWidth = false;
 
-				template <std::ptrdiff_t Extent, typename OutputReceiver>
+				template <typename OutputReceiver>
 				static constexpr void ToCodePoint(CharType codeUnit, OutputReceiver&& receiver)
 				{
 					std::forward<OutputReceiver>(receiver)(

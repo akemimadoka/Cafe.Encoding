@@ -22,6 +22,18 @@ TEST_CASE("Cafe.Encoding.UTF-16", "[Encoding][UTF-16]")
 				    REQUIRE(false);
 			    }
 		    });
+
+		CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::ToCodePoint(
+		    gsl::make_span(u"\xD852\xDF62"), [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.Result == 0x24B62);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
 	}
 
 	SECTION("CodePoint to UTF-16 BE")
@@ -33,6 +45,18 @@ TEST_CASE("Cafe.Encoding.UTF-16", "[Encoding][UTF-16]")
 				    REQUIRE(result.Result.size() == 2);
 				    const auto span = gsl::as_bytes(result.Result);
 				    REQUIRE(std::memcmp(span.data(), "\xD8\x52\xDF\x62", 4) == 0);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
+
+		CodePage::CodePageTrait<CodePage::Utf16BigEndian>::ToCodePoint(
+		    gsl::make_span(u"\x52D8\x62DF"), [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.Result == 0x24B62);
 			    }
 			    else
 			    {
