@@ -12,7 +12,6 @@ namespace Cafe::Encoding
 		};
 
 		// 假想代码页，表示 Unicode 码点
-		// 虽然 UTF-32 可表示相同的含义，但他们语义并不相同，因此分开
 		constexpr CodePageType CodePoint = static_cast<CodePageType>(0);
 
 		template <CodePageType CodePageValue>

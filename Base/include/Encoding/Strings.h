@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CodePage.h"
+#include "Encode.h"
 #include <cstring>
 #include <gsl/span>
 #include <memory>
@@ -16,7 +16,7 @@ namespace Cafe::Encoding
 			static constexpr float GrowFactor = 1.5f;
 
 			// 结果保证大于 to
-			static constexpr std::size_t Grow(std::size_t from, std::size_t to)
+			[[nodiscard]] static constexpr std::size_t Grow(std::size_t from, std::size_t to)
 			// [[expects: to > from]]
 			// [[ensures result : result >= to]]
 			{
@@ -173,33 +173,75 @@ namespace Cafe::Encoding
 				return *this;
 			}
 
-			constexpr std::size_t GetSize() const noexcept
+			[[nodiscard]] constexpr std::size_t GetSize() const noexcept
 			// [[ensures result : result <= GetCapacity()]]
 			{
 				return m_Size;
 			}
 
-			constexpr std::size_t GetCapacity() const noexcept
+			[[nodiscard]] constexpr std::size_t GetCapacity() const noexcept
 			// [[ensures result : result >= SsoThresholdSize]]
 			{
 				return m_Capacity;
 			}
 
-			constexpr CharType* GetStorage() noexcept
+			[[nodiscard]] constexpr CharType* GetStorage() noexcept
 			// [[ensures result : result != nullptr]]
 			{
 				return const_cast<CharType*>(std::as_const(*this).GetStorage());
 			}
 
-			constexpr const CharType* GetStorage() const noexcept
+			[[nodiscard]] constexpr const CharType* GetStorage() const noexcept
 			// [[ensures result : result != nullptr]]
 			{
 				return IsDynamicAllocated() ? m_DynamicStorage : m_SsoStorage;
 			}
 
-			constexpr bool IsDynamicAllocated() const noexcept
+			[[nodiscard]] constexpr bool IsDynamicAllocated() const noexcept
 			{
 				return m_Capacity > SsoThresholdSize;
+			}
+
+			constexpr void Reserve(std::size_t newCapacity)
+			{
+				// 由于 Capacity 最小值为 SsoThresholdSize，因此大于意味着必然需要动态存储
+				if (newCapacity <= m_Capacity)
+				{
+					return;
+				}
+
+				const auto newStorage =
+				    std::allocator_traits<Allocator>::allocate(m_Allocator, newCapacity);
+				std::memcpy(newStorage, GetStorage(), m_Size);
+				if (m_Capacity > SsoThresholdSize)
+				{
+					std::allocator_traits<Allocator>::deallocate(m_DynamicStorage, m_Capacity);
+				}
+				m_DynamicStorage = newStorage;
+				m_Capacity = newCapacity;
+			}
+
+			constexpr void Resize(std::size_t newSize, CharType value = CharType{})
+			{
+				if (newSize <= m_Capacity)
+				{
+					m_Size = newSize;
+					return;
+				}
+
+				Reserve(newSize);
+				std::uninitialized_fill(GetStorage() + m_Size, GetStorage() + newSize, value);
+				m_Size = newSize;
+			}
+
+			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行追加操作
+			template <std::ptrdiff_t Extent>
+			constexpr void UncheckedAppend(gsl::span<const CharType, Extent> const& src)
+			{
+				const auto srcSize = src.size();
+				const auto newSize = m_Size + srcSize;
+				std::memcpy(GetStorage() + m_Size, src.data(), srcSize);
+				m_Size = newSize;
 			}
 
 			template <std::ptrdiff_t Extent>
@@ -207,50 +249,29 @@ namespace Cafe::Encoding
 			{
 				const auto srcSize = src.size();
 				const auto newSize = m_Size + srcSize;
-				if (newSize <= m_Capacity)
+				if (newSize > m_Capacity)
 				{
-					std::memcpy(GetStorage() + m_Size, src.data(), srcSize);
-					m_Size = newSize;
+					Reserve(GrowPolicy::Grow(m_Capacity, newSize));
 				}
-				else
-				{
-					const auto newCapacity = GrowPolicy::Grow(m_Capacity, newSize);
-					const auto newStorage =
-					    std::allocator_traits<Allocator>::allocate(m_Allocator, newCapacity);
-					std::memcpy(newStorage, GetStorage(), m_Size);
-					std::memcpy(newStorage + m_Size, src.data(), srcSize);
-					if (m_Capacity > SsoThresholdSize)
-					{
-						std::allocator_traits<Allocator>::deallocate(m_DynamicStorage, m_Capacity);
-					}
-					m_DynamicStorage = newStorage;
-					m_Size = newSize;
-					m_Capacity = newCapacity;
-				}
+
+				UncheckedAppend(src);
+			}
+
+			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行赋值操作
+			template <std::ptrdiff_t Extent>
+			constexpr void UncheckedAssign(gsl::span<const CharType, Extent> const& src)
+			{
+				const auto newSize = src.size();
+				std::memcpy(GetStorage(), src.data(), newSize * sizeof(CharType));
+				m_Size = newSize;
 			}
 
 			template <std::ptrdiff_t Extent>
 			constexpr void Assign(gsl::span<const CharType, Extent> const& src)
 			{
 				const auto newSize = src.size();
-				if (newSize > m_Capacity) // 隐含需要动态分配，因为 Capacity 最小值为 SsoThresholdSize
-				{
-					const auto newStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, newSize);
-					std::memcpy(newStorage, src.data(), newSize * sizeof(CharType));
-					if (IsDynamicAllocated())
-					{
-						std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
-					}
-
-					m_Size = m_Capacity = newSize;
-					m_DynamicStorage = newStorage;
-				}
-				else
-				{
-					// Capacity 无须变动
-					m_Size = newSize;
-					std::memcpy(GetStorage(), src.data(), newSize * sizeof(CharType));
-				}
+				Reserve(newSize);
+				UncheckedAssign(src);
 			}
 
 			constexpr void ShrinkToFit()
@@ -276,7 +297,10 @@ namespace Cafe::Encoding
 			}
 
 		private:
-			[[no_unique_address]] Allocator m_Allocator;
+#if __has_cpp_attribute(no_unique_address)
+			[[no_unique_address]]
+#endif
+			Allocator m_Allocator;
 
 			std::size_t m_Size;
 			std::size_t m_Capacity;
@@ -324,59 +348,138 @@ namespace Cafe::Encoding
 		{
 		}
 
-		constexpr const_iterator cbegin() const noexcept
+		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 		{
 			return m_Span.begin();
 		}
 
-		constexpr const_iterator cend() const noexcept
+		[[nodiscard]] constexpr const_iterator cend() const noexcept
 		{
 			return m_Span.end();
 		}
 
-		constexpr const_iterator begin() const noexcept
+		[[nodiscard]] constexpr const_iterator begin() const noexcept
 		{
 			return cbegin();
 		}
 
-		constexpr const_iterator end() const noexcept
+		[[nodiscard]] constexpr const_iterator end() const noexcept
 		{
 			return cend();
 		}
 
-		constexpr size_type GetSize() const noexcept
+		[[nodiscard]] constexpr size_type GetSize() const noexcept
 		{
 			return m_Span.size();
 		}
 
-		constexpr size_type size() const noexcept
+		[[nodiscard]] constexpr size_type size() const noexcept
 		{
 			return GetSize();
 		}
 
-		constexpr bool IsEmpty() const noexcept
+		[[nodiscard]] constexpr bool IsEmpty() const noexcept
 		{
 			return !GetSize();
 		}
 
-		constexpr StringView SubStr(size_type begin, size_type size) const noexcept
+		[[nodiscard]] constexpr StringView SubStr(size_type begin, size_type size) const noexcept
 		{
 			return StringView{ m_Span.subspan(begin, size) };
 		}
 
-		constexpr gsl::span<const CharType, Extent> GetSpan() const noexcept
+		[[nodiscard]] constexpr gsl::span<const CharType, Extent> GetSpan() const noexcept
 		{
 			return m_Span;
 		}
 
-		constexpr const_pointer GetData() const noexcept
+		[[nodiscard]] constexpr const_pointer GetData() const noexcept
 		{
 			return m_Span.data();
+		}
+
+		[[nodiscard]] constexpr reference operator[](difference_type index) const noexcept
+		{
+			return m_Span[index];
+		}
+
+		template <std::ptrdiff_t OtherExtent>
+		[[nodiscard]] constexpr int
+		Compare(StringView<CodePageValue, OtherExtent> const& other) noexcept
+		{
+			const auto size = GetSize(), otherSize = other.GetSize();
+			const auto minSize = std::min(size, otherSize);
+
+			for (std::size_t i = 0; i < minSize; ++i)
+			{
+				const auto currentChar = m_Span[i], currentOtherChar = other[i];
+				if (currentChar > currentOtherChar)
+				{
+					return 1;
+				}
+				else if (currentChar < currentOtherChar)
+				{
+					return -1;
+				}
+			}
+
+			if (size > otherSize)
+			{
+				return 1;
+			}
+			else if (size < otherSize)
+			{
+				return -1;
+			}
+
+			return 0;
 		}
 
 	private:
 		gsl::span<const CharType, Extent> m_Span;
 	};
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator==(StringView<CodePageValue, Extent1> const& a,
+	                                        StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return a.GetSize() == b.GetSize() && a.Compare(b) == 0;
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator!=(StringView<CodePageValue, Extent1> const& a,
+	                                        StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return !(a == b);
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator<(StringView<CodePageValue, Extent1> const& a,
+	                                       StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return a.Compare(b) < 0;
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator>(StringView<CodePageValue, Extent1> const& a,
+	                                       StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return a.Compare(b) > 0;
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator>=(StringView<CodePageValue, Extent1> const& a,
+	                                        StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return a.Compare(b) >= 0;
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
+	[[nodiscard]] constexpr bool operator<=(StringView<CodePageValue, Extent1> const& a,
+	                                        StringView<CodePageValue, Extent2> const& b) noexcept
+	{
+		return a.Compare(b) <= 0;
+	}
 
 	template <CodePage::CodePageType CodePageValue,
 	          typename Allocator =
@@ -407,7 +510,7 @@ namespace Cafe::Encoding
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		template <std::ptrdiff_t Extent>
+		template <std::ptrdiff_t Extent = gsl::dynamic_extent>
 		using ViewType = StringView<CodePageValue, Extent>;
 
 		constexpr String() noexcept(std::is_nothrow_default_constructible_v<UsingStorageType>)
@@ -446,6 +549,19 @@ namespace Cafe::Encoding
 		{
 		}
 
+		template <std::ptrdiff_t Extent>
+		constexpr String(StringView<CodePageValue, Extent> const& str,
+		                 Allocator const& allocator = Allocator{})
+		    : String{ str.GetSpan(), allocator }
+		{
+		}
+
+		template <CodePage::CodePageType OtherCodePageValue, std::ptrdiff_t Extent,
+		          std::enable_if_t<CodePageValue != OtherCodePageValue, int> = 0>
+		constexpr explicit String(StringView<OtherCodePageValue, Extent> const& otherCodePageStr)
+		{
+		}
+
 		template <typename OtherAllocator, std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
 		constexpr String& operator=(
 		    String<CodePageValue, OtherAllocator, OtherSsoThresholdSize, OtherGrowPolicy> const& other)
@@ -470,6 +586,11 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t Extent>
+		constexpr String& operator=(StringView<CodePageValue, Extent> const& str)
+		{
+		}
+
+		template <std::ptrdiff_t Extent>
 		constexpr void Assign(gsl::span<const CharType, Extent> const& src)
 		{
 			m_Storage.Assign(src);
@@ -482,59 +603,74 @@ namespace Cafe::Encoding
 			return *this;
 		}
 
-		constexpr iterator begin() noexcept
+		[[nodiscard]] constexpr iterator begin() noexcept
 		{
 			return m_Storage.GetStorage();
 		}
 
-		constexpr iterator end() noexcept
+		[[nodiscard]] constexpr iterator end() noexcept
 		{
 			return m_Storage.GetStorage() + m_Storage.GetSize();
 		}
 
-		constexpr const_iterator cbegin() const noexcept
+		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 		{
 			return m_Storage.GetStorage();
 		}
 
-		constexpr const_iterator cend() const noexcept
+		[[nodiscard]] constexpr const_iterator cend() const noexcept
 		{
 			return m_Storage.GetStorage() + m_Storage.GetSize();
 		}
 
-		constexpr const_iterator begin() const noexcept
+		[[nodiscard]] constexpr const_iterator begin() const noexcept
 		{
 			return cbegin();
 		}
 
-		constexpr const_iterator end() const noexcept
+		[[nodiscard]] constexpr const_iterator end() const noexcept
 		{
 			return cend();
 		}
 
-		constexpr size_type GetSize() const noexcept
+		[[nodiscard]] constexpr reference operator[](difference_type index) noexcept
+		{
+			return m_Storage.GetStorage()[index];
+		}
+
+		[[nodiscard]] constexpr const_reference operator[](difference_type index) const noexcept
+		{
+			return m_Storage.GetStorage()[index];
+		}
+
+		[[nodiscard]] constexpr size_type GetSize() const noexcept
 		{
 			return m_Storage.GetSize();
 		}
 
-		constexpr size_type size() const noexcept
+		[[nodiscard]] constexpr size_type size() const noexcept
 		{
 			return GetSize();
 		}
 
-		constexpr bool IsEmpty() const noexcept
+		[[nodiscard]] constexpr bool IsEmpty() const noexcept
 		{
 			return !GetSize();
 		}
 
-		constexpr size_type GetCapacity() const noexcept
+		[[nodiscard]] constexpr size_type GetCapacity() const noexcept
 		{
 			return m_Storage.GetCapacity();
 		}
 
-		constexpr auto GetView() const noexcept
+		[[nodiscard]] constexpr ViewType<> GetView() const noexcept
 		{
-			return StringView{ gsl::make_span(m_Storage.GetStorage(), m_Storage.GetSize()) };
+			return ViewType<>{ gsl::make_span(m_Storage.GetStorage(), m_Storage.GetSize()) };
+		}
+
+		[[nodiscard]] operator ViewType<>() const noexcept
+		{
+			return GetView();
 		}
 
 	private:

@@ -147,15 +147,17 @@ namespace Cafe::Encoding
 	    GetEncodingResultInfoTrait<std::remove_cv_t<std::remove_reference_t<ResultType>>>::value;
 
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
-	struct Encoder
+	struct EncoderBase
 	{
-		template <std::ptrdiff_t Extent, typename OutputReceiver>
-		static constexpr void
-		Encode(gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType,
-		                 Extent> const& span,
-		       OutputReceiver&& receiver)
+		using EncodeUnitType = std::conditional_t<
+		    CodePageTrait<FromCodePage>::IsVariableWidth,
+		    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>,
+		    typename CodePage::CodePageTrait<FromCodePageValue>::CharType>;
+
+		template <typename OutputReceiver>
+		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
 		{
-			CodePage::CodePageTrait<FromCodePageValue>::ToCodePoint(span, [&](auto const& result) {
+			CodePage::CodePageTrait<FromCodePageValue>::ToCodePoint(encodeUnit, [&](auto const& result) {
 				constexpr auto resultCode = GetEncodingResultCode<decltype(result)>;
 				if constexpr (resultCode == EncodingResultCode::Accept)
 				{
@@ -174,42 +176,60 @@ namespace Cafe::Encoding
 				}
 			});
 		}
-	};
 
-	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue,
-	          std::ptrdiff_t Extent, typename OutputReceiver>
-	constexpr void
-	EncodeAll(gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType,
-	                    Extent> const& span,
-	          OutputReceiver&& receiver)
-	{
-		gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> remainedSpan =
-		    span;
-		do
+		template <std::ptrdiff_t Extent, typename OutputReceiver>
+		static constexpr void
+		EncodeAll(gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType,
+		                    Extent> const& span,
+		          OutputReceiver&& receiver)
 		{
-			Encoder<FromCodePageValue, ToCodePageValue>::Encode(remainedSpan, [&](auto const& result) {
-				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> remainedSpan =
+			    span;
+			while (!remainedSpan.empty())
+			{
+				const auto encodeUnit = [&]() constexpr
 				{
-					if constexpr (CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth)
+					if constexpr (CodePageTrait<FromCodePage>::IsVariableWidth)
 					{
-						remainedSpan = remainedSpan.subspan(result.AdvanceCount);
+						return remainedSpan;
 					}
 					else
 					{
-						remainedSpan = remainedSpan.subspan(1);
+						return remainedSpan.front();
 					}
 				}
-				else
-				{
-					// 出现错误时终止循环
-					remainedSpan =
-					    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>{};
-				}
+				();
+				Encode(encodeUnit, [&](auto const& result) {
+					if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+					{
+						if constexpr (CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth)
+						{
+							remainedSpan = remainedSpan.subspan(result.AdvanceCount);
+						}
+						else
+						{
+							remainedSpan = remainedSpan.subspan(1);
+						}
+					}
+					else
+					{
+						// 出现错误时终止循环
+						remainedSpan =
+						    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>{};
+					}
 
-				std::forward<OutputReceiver>(receiver)(result);
-			});
-		} while (!remainedSpan.empty());
-	}
+					std::forward<OutputReceiver>(receiver)(result);
+				});
+			}
+		}
+	};
+
+	/// @brief  编码器
+	/// @remark 使用类模板是为了允许可能的特化优化版本，继承是为了允许只重写 EncodeOne 版本，也允许全部重写以获得最佳性能
+	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
+	struct Encoder : EncoderBase<FromCodePageValue, ToCodePageValue>
+	{
+	};
 
 	template <>
 	struct CodePage::CodePageTrait<CodePage::CodePoint>

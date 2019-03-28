@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CAFE_ENCODING_CODEPAGE_UTF16_H
+#define CAFE_ENCODING_CODEPAGE_UTF16_H
 
 #include <Encoding/Encode.h>
 #include <cassert>
@@ -171,3 +172,10 @@ namespace Cafe::Encoding
 		};
 	} // namespace CodePage
 } // namespace Cafe::Encoding
+
+#endif
+
+#ifdef CAFE_CODEPAGE
+CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf16LittleEndian)
+CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf16BigEndian)
+#endif

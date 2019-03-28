@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CAFE_ENCODING_CODEPAGE_UTF8_H
+#define CAFE_ENCODING_CODEPAGE_UTF8_H
 
 #include <Encoding/Encode.h>
 
@@ -208,3 +209,9 @@ namespace Cafe::Encoding
 		};
 	} // namespace CodePage
 } // namespace Cafe::Encoding
+
+#endif
+
+#ifdef CAFE_CODEPAGE
+CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf8)
+#endif

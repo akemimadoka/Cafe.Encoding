@@ -1,5 +1,6 @@
 set(CAFE_INCLUDE_ENCODING_LIST "UTF-8;UTF-16;UTF-32" CACHE STRING "List of include encodings")
-set(CAFE_INCLUDE_UNICODE_DATA ON CACHE STRING "Include unicode data")
+set(CAFE_INCLUDE_UNICODE_DATA ON CACHE BOOL "Include unicode data")
+set(CAFE_INCLUDE_RUNTIME_ENCODING ON CACHE BOOL "Include runtime encoding")
 set(CAFE_INCLUDE_ENCODING_TEST ON CACHE BOOL "Include encoding test")
 
 add_subdirectory(Base)
@@ -13,6 +14,10 @@ if (CAFE_INCLUDE_UNICODE_DATA)
         message(SEND_ERROR "Unicode module is depend on encoding UTF-8, which is not included in CAFE_INCLUDE_ENCODING_LIST")
     endif()
     add_subdirectory(UnicodeData)
+endif()
+
+if (CAFE_INCLUDE_RUNTIME_ENCODING)
+    add_subdirectory(RuntimeEncoding)
 endif()
 
 if (CAFE_INCLUDE_ENCODING_TEST)
