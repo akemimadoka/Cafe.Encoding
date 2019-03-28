@@ -28,7 +28,7 @@ target_include_directories(Cafe.Encoding.UnicodeData PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
-target_compile_features(Cafe.Encoding.UnicodeData PUBLIC cxx_std_17)
+target_compile_features(Cafe.Encoding.UnicodeData PUBLIC cxx_std_20)
 
 target_link_libraries(Cafe.Encoding.UnicodeData PUBLIC
     Cafe.Core Cafe.Encoding.UTF-8)

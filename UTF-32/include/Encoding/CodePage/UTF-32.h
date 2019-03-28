@@ -12,10 +12,8 @@ namespace Cafe::Encoding
 
 		namespace Detail
 		{
-			template <CodePageType Utf32>
-			struct Utf32CommonPart
+			struct Utf32CommonPartBase
 			{
-			private:
 				static constexpr bool IsLittleEndian = []() constexpr
 				{
 #ifdef _MSC_VER
@@ -31,7 +29,12 @@ namespace Cafe::Encoding
 #endif
 				}
 				();
+			};
 
+			template <CodePageType Utf32>
+			struct Utf32CommonPart : Utf32CommonPartBase
+			{
+			private:
 				static constexpr bool NeedSwapEndian = (Utf32 == Utf32BigEndian) == IsLittleEndian;
 
 				/// @remark 假设了平台并非是混合端序的
@@ -91,6 +94,63 @@ namespace Cafe::Encoding
 			static constexpr const char Name[] = "UTF-32 BE";
 		};
 	} // namespace CodePage
+
+	namespace StringLiterals
+	{
+		constexpr StringView<CodePage::Utf32LittleEndian> operator""_lesv(
+		    const typename CodePage::CodePageTrait<CodePage::Utf32LittleEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf32LittleEndian> operator""_les(
+		    const typename CodePage::CodePageTrait<CodePage::Utf32LittleEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return String<CodePage::Utf32LittleEndian>{ gsl::make_span(str, size) };
+		}
+
+		constexpr StringView<CodePage::Utf32BigEndian>
+		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
+		                std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf32BigEndian>
+		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
+		               std::size_t size) noexcept
+		{
+			return String<CodePage::Utf32BigEndian>{ gsl::make_span(str, size) };
+		}
+
+		constexpr StringView<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		                         ? CodePage::Utf32LittleEndian
+		                         : CodePage::Utf32BigEndian>
+		operator""_sv(
+		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		                                               ? CodePage::Utf32LittleEndian
+		                                               : CodePage::Utf32BigEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		                  ? CodePage::Utf32LittleEndian
+		                  : CodePage::Utf32BigEndian>
+		operator""_s(
+		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		                                               ? CodePage::Utf32LittleEndian
+		                                               : CodePage::Utf32BigEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return String < CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+			           ? CodePage::Utf32LittleEndian
+			           : CodePage::Utf32BigEndian > { gsl::make_span(str, size) };
+		}
+	} // namespace StringLiterals
 } // namespace Cafe::Encoding
 
 #endif

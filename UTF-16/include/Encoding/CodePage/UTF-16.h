@@ -13,10 +13,8 @@ namespace Cafe::Encoding
 
 		namespace Detail
 		{
-			template <CodePageType Utf16>
-			struct Utf16CommonPart
+			struct Utf16CommonPartBase
 			{
-			private:
 				static constexpr bool IsLittleEndian = []() constexpr
 				{
 #ifdef _MSC_VER
@@ -32,7 +30,12 @@ namespace Cafe::Encoding
 #endif
 				}
 				();
+			};
 
+			template <CodePageType Utf16>
+			struct Utf16CommonPart : Utf16CommonPartBase
+			{
+			private:
 				static constexpr bool NeedSwapEndian = (Utf16 == Utf16BigEndian) == IsLittleEndian;
 
 				[[nodiscard]] static constexpr char16_t MaySwapEndian(char16_t value) noexcept
@@ -171,6 +174,63 @@ namespace Cafe::Encoding
 			static constexpr const char Name[] = "UTF-16 BE";
 		};
 	} // namespace CodePage
+
+	namespace StringLiterals
+	{
+		constexpr StringView<CodePage::Utf16LittleEndian> operator""_lesv(
+		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf16LittleEndian> operator""_les(
+		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return String<CodePage::Utf16LittleEndian>{ gsl::make_span(str, size) };
+		}
+
+		constexpr StringView<CodePage::Utf16BigEndian>
+		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
+		                std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf16BigEndian>
+		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
+		               std::size_t size) noexcept
+		{
+			return String<CodePage::Utf16BigEndian>{ gsl::make_span(str, size) };
+		}
+
+		constexpr StringView<CodePage::Detail::Utf16CommonPartBase::IsLittleEndian
+		                         ? CodePage::Utf16LittleEndian
+		                         : CodePage::Utf16BigEndian>
+		operator""_sv(
+		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf16CommonPartBase::IsLittleEndian
+		                                               ? CodePage::Utf16LittleEndian
+		                                               : CodePage::Utf16BigEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Detail::Utf16CommonPartBase::IsLittleEndian
+		                  ? CodePage::Utf16LittleEndian
+		                  : CodePage::Utf16BigEndian>
+		operator""_s(
+		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf16CommonPartBase::IsLittleEndian
+		                                               ? CodePage::Utf16LittleEndian
+		                                               : CodePage::Utf16BigEndian>::CharType* str,
+		    std::size_t size) noexcept
+		{
+			return String < CodePage::Detail::Utf16CommonPartBase::IsLittleEndian
+			           ? CodePage::Utf16LittleEndian
+			           : CodePage::Utf16BigEndian > { gsl::make_span(str, size) };
+		}
+	} // namespace StringLiterals
 } // namespace Cafe::Encoding
 
 #endif

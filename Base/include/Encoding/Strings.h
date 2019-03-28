@@ -46,7 +46,7 @@ namespace Cafe::Encoding
 			template <std::ptrdiff_t Extent>
 			constexpr StringStorage(gsl::span<const CharType, Extent> const& src,
 			                        Allocator const& allocator = Allocator{})
-			    : m_Allocator{ allocator }, m_Size{ src.size() }
+			    : m_Allocator{ allocator }, m_Size{ static_cast<std::size_t>(src.size()) }
 			{
 				if (m_Size > SsoThresholdSize)
 				{
@@ -406,8 +406,8 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t OtherExtent>
-		[[nodiscard]] constexpr int
-		Compare(StringView<CodePageValue, OtherExtent> const& other) const noexcept
+		[[nodiscard]] constexpr int Compare(StringView<CodePageValue, OtherExtent> const& other) const
+		    noexcept
 		{
 			const auto size = GetSize(), otherSize = other.GetSize();
 			const auto minSize = std::min(size, otherSize);
@@ -563,8 +563,21 @@ namespace Cafe::Encoding
 
 		template <CodePage::CodePageType OtherCodePageValue, std::ptrdiff_t Extent,
 		          std::enable_if_t<CodePageValue != OtherCodePageValue, int> = 0>
-		constexpr explicit String(StringView<OtherCodePageValue, Extent> const& otherCodePageStr)
+		constexpr explicit String(StringView<OtherCodePageValue, Extent> const& otherCodePageStr,
+		                          Allocator const& allocator = Allocator{})
+		    : String{ allocator }
 		{
+			Encoder<OtherCodePageValue, CodePageValue>::EncodeAll(
+			    otherCodePageStr, [this](auto const& result) {
+				    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+				    {
+					    Append(result.Result);
+				    }
+				    else
+					{
+						// TODO: 报告错误
+					}
+			    });
 		}
 
 		template <typename OtherAllocator, std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>

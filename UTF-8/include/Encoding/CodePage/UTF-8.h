@@ -2,6 +2,7 @@
 #define CAFE_ENCODING_CODEPAGE_UTF8_H
 
 #include <Encoding/Encode.h>
+#include <Encoding/Strings.h>
 
 namespace Cafe::Encoding
 {
@@ -208,6 +209,39 @@ namespace Cafe::Encoding
 			}
 		};
 	} // namespace CodePage
+
+	namespace StringLiterals
+	{
+#if __cpp_char8_t == 201811L
+		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
+
+		constexpr StringView<CodePage::Utf8>
+		operator""_sv(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
+		              std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf8>
+		operator""_s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
+		{
+			return String<CodePage::Utf8>{ gsl::make_span(str, size) };
+		}
+#endif
+
+		constexpr StringView<CodePage::Utf8>
+		operator""_u8sv(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
+		                std::size_t size) noexcept
+		{
+			return gsl::make_span(str, size);
+		}
+
+		inline String<CodePage::Utf8>
+		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
+		{
+			return String<CodePage::Utf8>{ gsl::make_span(str, size) };
+		}
+	} // namespace StringLiterals
 } // namespace Cafe::Encoding
 
 #endif

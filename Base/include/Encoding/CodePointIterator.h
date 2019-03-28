@@ -19,17 +19,17 @@ namespace Cafe::Encoding
 	} // namespace Detail
 
 	template <
-	    CodePageType CodePageValue, typename WrappedIterator,
+	    CodePage::CodePageType CodePageValue, typename WrappedIterator,
 	    std::enable_if_t<std::is_same_v<std::iterator_traits<WrappedIterator>::value_type,
-	                                    typename CodePageTrait<CodePageValue>::CharType> &&
+	                                    typename CodePage::CodePageTrait<CodePageValue>::CharType> &&
 	                         std::is_same_v<std::iterator_traits<WrappedIterator>::iterator_category,
 	                                        std::random_access_iterator_tag>,
 	                     int> = 0>
 	class CodePointIterator final
-	    : Detail::MaybeCurrentWidthBase<CodePageTrait<CodePageValue>::IsVariableWidth>
+	    : Detail::MaybeCurrentWidthBase<CodePage::CodePageTrait<CodePageValue>::IsVariableWidth>
 	{
 		using WrappedIteratorTrait = std::iterator_traits<WrappedIterator>;
-		using UsingCodePageTrait = CodePageTrait<CodePageValue>;
+		using UsingCodePageTrait = CodePage::CodePageTrait<CodePageValue>;
 
 	public:
 		static constexpr auto UsingCodePage = CodePageValue;
