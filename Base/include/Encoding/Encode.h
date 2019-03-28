@@ -149,24 +149,33 @@ namespace Cafe::Encoding
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncoderBase
 	{
+		using FromCodePageTrait = CodePage::CodePageTrait<FromCodePageValue>;
 		using EncodeUnitType = std::conditional_t<
-		    CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
+		    FromCodePageTrait::IsVariableWidth,
 		    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>,
-		    typename CodePage::CodePageTrait<FromCodePageValue>::CharType>;
+		    typename FromCodePageTrait::CharType>;
 
 		template <typename OutputReceiver>
 		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
 		{
-			CodePage::CodePageTrait<FromCodePageValue>::ToCodePoint(encodeUnit, [&](auto const& result) {
+			FromCodePageTrait::ToCodePoint(encodeUnit, [&](auto const& result) {
 				constexpr auto resultCode = GetEncodingResultCode<decltype(result)>;
 				if constexpr (resultCode == EncodingResultCode::Accept)
 				{
 					CodePage::CodePageTrait<ToCodePageValue>::FromCodePoint(
 					    result.Result, [&](auto const& finalResult) {
-						    std::forward<OutputReceiver>(receiver)(
+						    auto convertedResult =
 						        static_cast<EncodingResult<FromCodePageValue, ToCodePageValue,
 						                                   GetEncodingResultCode<decltype(finalResult)>>>(
-						            finalResult));
+						            finalResult);
+						    if constexpr (FromCodePageTrait::IsVariableWidth &&
+						                  GetEncodingResultCode<decltype(finalResult)> ==
+						                      EncodingResultCode::Accept)
+						    {
+						        // 目前只有这个信息需要保留，或许会有其他自定义信息需要保留
+							    convertedResult.AdvanceCount = result.AdvanceCount;
+						    }
+						    std::forward<OutputReceiver>(receiver)(convertedResult);
 					    });
 				}
 				else
@@ -225,7 +234,8 @@ namespace Cafe::Encoding
 	};
 
 	/// @brief  编码器
-	/// @remark 使用类模板是为了允许可能的特化优化版本，继承是为了允许只重写 EncodeOne 版本，也允许全部重写以获得最佳性能
+	/// @remark 使用类模板是为了允许可能的特化优化版本，继承是为了允许只重写 EncodeOne
+	/// 版本，也允许全部重写以获得最佳性能
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct Encoder : EncoderBase<FromCodePageValue, ToCodePageValue>
 	{
