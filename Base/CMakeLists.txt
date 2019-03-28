@@ -5,6 +5,6 @@ target_include_directories(Cafe.Encoding.Base INTERFACE
     $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(Cafe.Encoding.Base INTERFACE
-    CONAN_PKG::gsl_microsoft)
+    Cafe.Core CONAN_PKG::gsl_microsoft)
 
 target_compile_features(Cafe.Encoding.Base INTERFACE cxx_std_17)

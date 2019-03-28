@@ -150,7 +150,7 @@ namespace Cafe::Encoding
 	struct EncoderBase
 	{
 		using EncodeUnitType = std::conditional_t<
-		    CodePageTrait<FromCodePage>::IsVariableWidth,
+		    CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
 		    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>,
 		    typename CodePage::CodePageTrait<FromCodePageValue>::CharType>;
 
@@ -189,13 +189,13 @@ namespace Cafe::Encoding
 			{
 				const auto encodeUnit = [&]() constexpr
 				{
-					if constexpr (CodePageTrait<FromCodePage>::IsVariableWidth)
+					if constexpr (CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth)
 					{
 						return remainedSpan;
 					}
 					else
 					{
-						return remainedSpan.front();
+						return remainedSpan[0];
 					}
 				}
 				();

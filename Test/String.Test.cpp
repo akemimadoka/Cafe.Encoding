@@ -5,7 +5,7 @@ using namespace Cafe;
 using namespace Encoding;
 
 #if __has_include(<Encoding/CodePage/UTF-8.h>)
-TEST_CASE("Cafe.Encoding.Base", "[Encoding][String]")
+TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 {
 	SECTION("String test")
 	{

@@ -215,7 +215,7 @@ namespace Cafe::Encoding
 				std::memcpy(newStorage, GetStorage(), m_Size);
 				if (m_Capacity > SsoThresholdSize)
 				{
-					std::allocator_traits<Allocator>::deallocate(m_DynamicStorage, m_Capacity);
+					std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
 				}
 				m_DynamicStorage = newStorage;
 				m_Capacity = newCapacity;
@@ -334,6 +334,8 @@ namespace Cafe::Encoding
 		using value_type = CharType;
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
+		using reference = value_type const&;
+		using const_reference = reference;
 
 		constexpr StringView() noexcept : m_Span{}
 		{
@@ -350,12 +352,12 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 		{
-			return m_Span.begin();
+			return &*m_Span.begin();
 		}
 
 		[[nodiscard]] constexpr const_iterator cend() const noexcept
 		{
-			return m_Span.end();
+			return &*m_Span.end();
 		}
 
 		[[nodiscard]] constexpr const_iterator begin() const noexcept
@@ -405,7 +407,7 @@ namespace Cafe::Encoding
 
 		template <std::ptrdiff_t OtherExtent>
 		[[nodiscard]] constexpr int
-		Compare(StringView<CodePageValue, OtherExtent> const& other) noexcept
+		Compare(StringView<CodePageValue, OtherExtent> const& other) const noexcept
 		{
 			const auto size = GetSize(), otherSize = other.GetSize();
 			const auto minSize = std::min(size, otherSize);
@@ -510,6 +512,9 @@ namespace Cafe::Encoding
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
+		using reference = value_type&;
+		using const_reference = value_type const&;
+
 		template <std::ptrdiff_t Extent = gsl::dynamic_extent>
 		using ViewType = StringView<CodePageValue, Extent>;
 
@@ -586,8 +591,16 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t Extent>
+		constexpr void Assign(StringView<CodePageValue, Extent> const& str)
+		{
+			m_Storage.Assign(str.GetSpan());
+		}
+
+		template <std::ptrdiff_t Extent>
 		constexpr String& operator=(StringView<CodePageValue, Extent> const& str)
 		{
+			Assign(str);
+			return *this;
 		}
 
 		template <std::ptrdiff_t Extent>
@@ -601,6 +614,18 @@ namespace Cafe::Encoding
 		{
 			Assign(src);
 			return *this;
+		}
+
+		template <std::ptrdiff_t Extent>
+		constexpr void Append(gsl::span<const CharType, Extent> const& src)
+		{
+			m_Storage.Append(src);
+		}
+
+		template <std::ptrdiff_t Extent>
+		constexpr void Append(ViewType<Extent> const& src)
+		{
+			m_Storage.Append(src.GetSpan());
 		}
 
 		[[nodiscard]] constexpr iterator begin() noexcept
