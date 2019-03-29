@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Encode.h"
-#include <cstring>
 #include <gsl/span>
 #include <memory>
 
@@ -52,12 +51,12 @@ namespace Cafe::Encoding
 				{
 					m_DynamicStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, m_Capacity);
 					m_Capacity = m_Size;
-					std::memcpy(m_DynamicStorage, src.data(), m_Size * sizeof(CharType));
+					std::copy_n(src.data(), m_Size, m_DynamicStorage);
 				}
 				else
 				{
 					m_Capacity = SsoThresholdSize;
-					std::memcpy(m_SsoStorage, src.data(), m_Size * sizeof(CharType));
+					std::copy_n(src.data(), m_Size, m_SsoStorage);
 				}
 			}
 
@@ -111,7 +110,7 @@ namespace Cafe::Encoding
 
 				m_Size = other.m_Size;
 				m_Capacity = other.m_Capacity;
-				std::memcpy(m_SsoStorage, other.GetStorage(), m_Size);
+				std::copy_n(other.GetStorage(), m_Size, m_SsoStorage);
 			}
 
 			~StringStorage()
@@ -212,7 +211,7 @@ namespace Cafe::Encoding
 
 				const auto newStorage =
 				    std::allocator_traits<Allocator>::allocate(m_Allocator, newCapacity);
-				std::memcpy(newStorage, GetStorage(), m_Size);
+				std::copy_n(GetStorage(), m_Size, newStorage);
 				if (m_Capacity > SsoThresholdSize)
 				{
 					std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
@@ -230,7 +229,7 @@ namespace Cafe::Encoding
 				}
 
 				Reserve(newSize);
-				std::uninitialized_fill(GetStorage() + m_Size, GetStorage() + newSize, value);
+				std::fill(GetStorage() + m_Size, GetStorage() + newSize, value);
 				m_Size = newSize;
 			}
 
@@ -240,7 +239,7 @@ namespace Cafe::Encoding
 			{
 				const auto srcSize = src.size();
 				const auto newSize = m_Size + srcSize;
-				std::memcpy(GetStorage() + m_Size, src.data(), srcSize);
+				std::copy_n(src.data(), srcSize, GetStorage() + m_Size);
 				m_Size = newSize;
 			}
 
@@ -262,7 +261,7 @@ namespace Cafe::Encoding
 			constexpr void UncheckedAssign(gsl::span<const CharType, Extent> const& src)
 			{
 				const auto newSize = src.size();
-				std::memcpy(GetStorage(), src.data(), newSize * sizeof(CharType));
+				std::copy_n(src.data(), newSize, GetStorage());
 				m_Size = newSize;
 			}
 
@@ -281,14 +280,14 @@ namespace Cafe::Encoding
 					if (m_Size < SsoThresholdSize)
 					{
 						const auto oldStorage = m_DynamicStorage;
-						std::memcpy(m_SsoStorage, oldStorage, m_Size);
+						std::copy_n(oldStorage, m_Size, m_SsoStorage);
 						std::allocator_traits<Allocator>::deallocate(m_Allocator, oldStorage, m_Capacity);
 						m_Capacity = SsoThresholdSize;
 					}
 					else
 					{
 						const auto newStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, m_Size);
-						std::memcpy(newStorage, m_DynamicStorage, m_Size);
+						std::copy_n(m_DynamicStorage, m_Size, newStorage);
 						std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
 						m_DynamicStorage = newStorage;
 						m_Capacity = m_Size;
@@ -714,4 +713,34 @@ namespace Cafe::Encoding
 	private:
 		UsingStorageType m_Storage;
 	};
+
+#if __cpp_nontype_template_parameter_class >= 201806L
+	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue,
+	          StringView<FromCodePageValue> str>
+	constexpr auto StaticEncode() noexcept
+	{
+		std::array<typename CodePage::CodePageTrait<ToCodePageValue>::CharType,
+		           CountEncodeSize<FromCodePageValue, ToCodePageValue>(str.GetSpan())>
+		    result{};
+		auto iter = result.data();
+		Encoder<FromCodePageValue, ToCodePageValue>::EncodeAll(span, [&](auto const& result) {
+			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			{
+				if constexpr (CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth)
+				{
+					for (const auto item : result.Result)
+					{
+						*iter++ = item;
+					}
+				}
+				else
+				{
+					*iter++ = result.Result;
+				}
+			}
+		});
+		return result;
+	}
+#endif
+
 } // namespace Cafe::Encoding

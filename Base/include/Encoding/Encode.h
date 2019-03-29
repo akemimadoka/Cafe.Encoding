@@ -172,7 +172,7 @@ namespace Cafe::Encoding
 						                  GetEncodingResultCode<decltype(finalResult)> ==
 						                      EncodingResultCode::Accept)
 						    {
-						        // 目前只有这个信息需要保留，或许会有其他自定义信息需要保留
+							    // 目前只有这个信息需要保留，或许会有其他自定义信息需要保留
 							    convertedResult.AdvanceCount = result.AdvanceCount;
 						    }
 						    std::forward<OutputReceiver>(receiver)(convertedResult);
@@ -240,6 +240,36 @@ namespace Cafe::Encoding
 	struct Encoder : EncoderBase<FromCodePageValue, ToCodePageValue>
 	{
 	};
+
+	/// @brief  计算从 FromCodePageValue 的字符串编码到 ToCodePageValue 的长度
+	/// @return 结束时编码的结果以及编码的长度（以 ToCodePageValue 的编码单元个数计算）
+	/// @remark 若 span 为空，编码视为成功，返回大小为 0
+	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
+	constexpr std::pair<EncodingResultCode, std::size_t> CountEncodeSize(
+	    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> const&
+	        span) noexcept
+	{
+		auto resultCode = EncodingResultCode::Accept;
+		std::size_t count{};
+		Encoder<FromCodePageValue, ToCodePageValue>::EncodeAll(span, [&](auto const& result) {
+			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			{
+				if constexpr (CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth)
+				{
+					count += result.Result.size();
+				}
+				else
+				{
+					++count;
+				}
+			}
+			else
+			{
+				resultCode = GetEncodingResultCode<decltype(result)>;
+			}
+		});
+		return { resultCode, count };
+	}
 
 	template <>
 	struct CodePage::CodePageTrait<CodePage::CodePoint>

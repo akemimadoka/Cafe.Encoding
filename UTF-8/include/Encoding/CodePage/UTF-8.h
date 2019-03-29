@@ -16,7 +16,7 @@ namespace Cafe::Encoding
 			static constexpr const char Name[] = "UTF-8";
 
 			// 表示一个编码单元的类型，为了好看名称仍用 CharType，但 CharType 不表示字符
-#if __cpp_char8_t == 201811L
+#if __cpp_char8_t >= 201811L
 			using CharType = char8_t;
 #else
 			using CharType = char;
@@ -212,7 +212,7 @@ namespace Cafe::Encoding
 
 	namespace StringLiterals
 	{
-#if __cpp_char8_t == 201811L
+#if __cpp_char8_t >= 201811L
 		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
 
 		constexpr StringView<CodePage::Utf8>

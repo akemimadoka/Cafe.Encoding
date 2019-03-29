@@ -3,6 +3,7 @@
 #include <Encoding/CodePage/UTF-8.h>
 #include <Encoding/Strings.h>
 #include <Misc/Ratio.h>
+#include <Misc/Utility.h>
 
 #include <array>
 #include <optional>
