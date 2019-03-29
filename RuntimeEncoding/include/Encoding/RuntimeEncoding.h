@@ -194,7 +194,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					}
 					else
 					{
-						resultSpan = gsl::make_span(&result.Result, 1);
+						resultSpan = gsl::as_bytes(gsl::make_span(&result.Result, 1));
 					}
 
 					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{

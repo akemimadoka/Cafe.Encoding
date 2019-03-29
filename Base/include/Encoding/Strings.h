@@ -283,6 +283,7 @@ namespace Cafe::Encoding
 						const auto oldStorage = m_DynamicStorage;
 						std::memcpy(m_SsoStorage, oldStorage, m_Size);
 						std::allocator_traits<Allocator>::deallocate(m_Allocator, oldStorage, m_Capacity);
+						m_Capacity = SsoThresholdSize;
 					}
 					else
 					{
@@ -290,10 +291,9 @@ namespace Cafe::Encoding
 						std::memcpy(newStorage, m_DynamicStorage, m_Size);
 						std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
 						m_DynamicStorage = newStorage;
+						m_Capacity = m_Size;
 					}
 				}
-
-				m_Capacity = m_Size;
 			}
 
 		private:
@@ -574,9 +574,9 @@ namespace Cafe::Encoding
 					    Append(result.Result);
 				    }
 				    else
-					{
-						// TODO: 报告错误
-					}
+				    {
+					    // TODO: 报告错误
+				    }
 			    });
 		}
 

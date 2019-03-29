@@ -93,14 +93,14 @@ namespace Cafe::Encoding
 
 	namespace RuntimeUnicodeData
 	{
-		using UnderlyingData = Detail::UnicodeDataArrayGenerator<std::integer_sequence<CodePointType,
+		using UnderlyingData = Detail::UnicodeDataArrayGenerator<std::integer_sequence<CodePointType
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
-	codeValue,
+	, codeValue
 #include <Encoding/Impl/UnicodeData.h>
-		    0>>;
+		    >>;
 
 		bool IsInUnicodeData(CodePointType codePoint) noexcept
 		{
