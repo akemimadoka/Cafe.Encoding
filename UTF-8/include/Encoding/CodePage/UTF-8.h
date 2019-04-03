@@ -244,6 +244,10 @@ namespace Cafe::Encoding
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding
 
+#define CAFE_UTF8_IMPL(str) u8 ## str
+#define CAFE_UTF8(str) CAFE_UTF8_IMPL(str)
+#define CAFE_UTF8_SV(str) ::Cafe::Encoding::StringView<CodePage::Utf8, std::size(CAFE_UTF8_IMPL(str))>{ CAFE_UTF8_IMPL(str) }
+
 #endif
 
 #ifdef CAFE_CODEPAGE

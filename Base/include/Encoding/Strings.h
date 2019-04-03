@@ -14,7 +14,7 @@ namespace Cafe::Encoding
 		{
 			static constexpr float GrowFactor = 1.5f;
 
-			// 结果保证大于 to
+			// 结果保证不小于 to
 			[[nodiscard]] static constexpr std::size_t Grow(std::size_t from, std::size_t to)
 			// [[expects: to > from]]
 			// [[ensures result : result >= to]]
@@ -93,6 +93,7 @@ namespace Cafe::Encoding
 					{
 						if (other.m_Capacity <= OtherSsoThresholdSize)
 						{
+							m_Allocator->~Allocator();
 							new (static_cast<void*>(this))
 							    StringStorage(gsl::make_span(other.GetStorage(), other.GetSize()), m_Allocator);
 						}
@@ -345,7 +346,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t N>
-		constexpr StringView(const CharType (&array)[N]) noexcept : StringView(gsl::make_span(array))
+		constexpr StringView(const CharType (&array)[N]) noexcept : StringView{ gsl::make_span(array) }
 		{
 		}
 
@@ -439,6 +440,21 @@ namespace Cafe::Encoding
 	private:
 		gsl::span<const CharType, Extent> m_Span;
 	};
+
+	template <CodePage::CodePageType CodePageValue, std::size_t N>
+	constexpr StringView<CodePageValue, N>
+	AsView(const typename CodePage::CodePageTrait<CodePageValue>::CharType (&arr)[N]) noexcept
+	{
+		return { arr };
+	}
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t N>
+	constexpr StringView<CodePageValue, N>
+	AsView(gsl::span<const typename CodePage::CodePageTrait<CodePageValue>::CharType, N> const&
+	           span) noexcept
+	{
+		return { span };
+	}
 
 	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent1, std::ptrdiff_t Extent2>
 	[[nodiscard]] constexpr bool operator==(StringView<CodePageValue, Extent1> const& a,

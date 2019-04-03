@@ -43,7 +43,7 @@ namespace Cafe::Encoding
 		}
 	} // namespace Detail
 
-	// Result 字段是解码的结果，若是变长编码其类型为
+	// Result 字段是编码的结果，若是变长编码其类型为
 	// span<编码单元>，否则为单独的编码单元 对于变长代码页会自动增加 AdvanceCount
 	// 字段，指定获取 Result 所消耗的源代码页编码单元数量
 	// 对于所有特化，应允许不同来源代码页的 EncodingResult
@@ -158,32 +158,60 @@ namespace Cafe::Encoding
 		template <typename OutputReceiver>
 		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
 		{
-			FromCodePageTrait::ToCodePoint(encodeUnit, [&](auto const& result) {
-				constexpr auto resultCode = GetEncodingResultCode<decltype(result)>;
-				if constexpr (resultCode == EncodingResultCode::Accept)
+			if constexpr (FromCodePageValue == ToCodePageValue)
+			{
+				if constexpr (FromCodePageTrait::IsVariableWidth)
 				{
-					CodePage::CodePageTrait<ToCodePageValue>::FromCodePoint(
-					    result.Result, [&](auto const& finalResult) {
-						    auto convertedResult =
-						        static_cast<EncodingResult<FromCodePageValue, ToCodePageValue,
-						                                   GetEncodingResultCode<decltype(finalResult)>>>(
-						            finalResult);
-						    if constexpr (FromCodePageTrait::IsVariableWidth &&
-						                  GetEncodingResultCode<decltype(finalResult)> ==
-						                      EncodingResultCode::Accept)
-						    {
-							    // 目前只有这个信息需要保留，或许会有其他自定义信息需要保留
-							    convertedResult.AdvanceCount = result.AdvanceCount;
-						    }
-						    std::forward<OutputReceiver>(receiver)(convertedResult);
-					    });
+					std::forward<OutputReceiver>(receiver)(
+					    EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>{
+					        encodeUnit, encodeUnit.size() });
 				}
 				else
 				{
 					std::forward<OutputReceiver>(receiver)(
-					    static_cast<EncodingResult<FromCodePageValue, ToCodePageValue, resultCode>>(result));
+					    EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>{
+					        encodeUnit });
 				}
-			});
+			}
+			else if constexpr (FromCodePageValue == CodePage::CodePoint)
+			{
+				CodePage::CodePageTrait<ToCodePageValue>::FromCodePoint(
+				    encodeUnit, std::forward<OutputReceiver>(receiver));
+			}
+			else if constexpr (ToCodePageValue == CodePage::CodePoint)
+			{
+				FromCodePageTrait::ToCodePoint(encodeUnit, std::forward<OutputReceiver>(receiver));
+			}
+			else
+			{
+				FromCodePageTrait::ToCodePoint(encodeUnit, [&](auto const& result) {
+					constexpr auto resultCode = GetEncodingResultCode<decltype(result)>;
+					if constexpr (resultCode == EncodingResultCode::Accept)
+					{
+						CodePage::CodePageTrait<ToCodePageValue>::FromCodePoint(
+						    result.Result, [&](auto const& finalResult) {
+							    auto convertedResult =
+							        static_cast<EncodingResult<FromCodePageValue, ToCodePageValue,
+							                                   GetEncodingResultCode<decltype(finalResult)>>>(
+							            finalResult);
+							    if constexpr (FromCodePageTrait::IsVariableWidth &&
+							                  GetEncodingResultCode<decltype(finalResult)> ==
+							                      EncodingResultCode::Accept)
+							    {
+								    // 目前只有这个信息需要保留，或许会有其他自定义信息需要保留
+								    convertedResult.AdvanceCount = result.AdvanceCount;
+							    }
+							    std::forward<OutputReceiver>(receiver)(convertedResult);
+						    });
+					}
+					else
+					{
+						std::forward<OutputReceiver>(receiver)(
+						    static_cast<EncodingResult<FromCodePageValue, ToCodePageValue, resultCode>>(
+						        result));
+					}
+				});
+			}
 		}
 
 		template <std::ptrdiff_t Extent, typename OutputReceiver>
