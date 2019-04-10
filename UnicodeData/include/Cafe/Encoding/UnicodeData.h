@@ -1,9 +1,9 @@
 #pragma once
-#include <Encoding/CodePage.h>
-#include <Encoding/CodePage/UTF-8.h>
-#include <Encoding/Strings.h>
-#include <Misc/Ratio.h>
-#include <Misc/Utility.h>
+#include <Cafe/Encoding/CodePage.h>
+#include <Cafe/Encoding/CodePage/UTF-8.h>
+#include <Cafe/Encoding/Strings.h>
+#include <Cafe/Misc/Ratio.h>
+#include <Cafe/Misc/Utility.h>
 
 #include <array>
 #include <optional>

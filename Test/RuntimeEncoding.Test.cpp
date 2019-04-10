@@ -1,4 +1,4 @@
-#include <Encoding/RuntimeEncoding.h>
+#include <Cafe/Encoding/RuntimeEncoding.h>
 #include <catch2/catch.hpp>
 #include <cstring>
 #include <vector>
@@ -6,7 +6,7 @@
 using namespace Cafe;
 using namespace Encoding;
 
-#if __has_include(<Encoding/CodePage/UTF-8.h>) && __has_include(<Encoding/CodePage/UTF-16.h>)
+#if __has_include(<Cafe/Encoding/CodePage/UTF-8.h>) && __has_include(<Cafe/Encoding/CodePage/UTF-16.h>)
 TEST_CASE("Cafe.Encoding.RuntimeEncoding", "[Encoding][RuntimeEncoding]")
 {
 	SECTION("RuntimeEncoding test")

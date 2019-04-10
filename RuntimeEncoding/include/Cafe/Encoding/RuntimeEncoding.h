@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Encoding/Encode.h>
-#include <IncludedEncoding.h> // 提前包含以阻止错误引入声明
+#include <Cafe/Encoding/Encode.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h> // 提前包含以阻止错误引入声明
 #include <cstring>
 
 namespace Cafe::Encoding::RuntimeEncoding
 {
 	using AllIncludedCodePages = std::integer_sequence<CodePage::CodePageType
 #define CAFE_CODEPAGE(codePageValue) , codePageValue
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 	                                                   >;
 
 	template <typename ResultUnitType>
@@ -16,7 +16,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	{
 		gsl::span<const ResultUnitType> Result;
 		EncodingResultCode ResultCode;
-		std::size_t AdvanceCount; ///< @brief 解码消费的编码单元数，若来源方运行时确定则是字节数
+		std::size_t AdvanceCount; ///< @brief 编码消费的编码单元数，若来源方运行时确定则是字节数
 	};
 
 	template <CodePage::CodePageType CodePageValue>
@@ -126,7 +126,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 #define CAFE_CODEPAGE(codePageValue)                                                               \
 	case codePageValue:                                                                              \
 		return EncodeFromImpl<true, codePageValue>(src, std::forward<OutputReceiver>(receiver));
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
 				assert(!"Invalid code page.");
 				return;
@@ -147,7 +147,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 #define CAFE_CODEPAGE(codePageValue)                                                               \
 	case codePageValue:                                                                              \
 		return EncodeFromImpl<false, codePageValue>(src, std::forward<OutputReceiver>(receiver));
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
 				assert(!"Invalid code page.");
 				return;
@@ -232,7 +232,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 #define CAFE_CODEPAGE(codePageValue)                                                               \
 	case codePageValue:                                                                              \
 		return EncodeToImpl<true, codePageValue>(src, std::forward<OutputReceiver>(receiver));
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
 				assert(!"Invalid code page.");
 				return;
@@ -253,7 +253,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 #define CAFE_CODEPAGE(codePageValue)                                                               \
 	case codePageValue:                                                                              \
 		return EncodeToImpl<false, codePageValue>(src, std::forward<OutputReceiver>(receiver));
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
 				assert(!"Invalid code page.");
 				return;
@@ -274,7 +274,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			    gsl::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
 		});                                                                                            \
 		break;
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 		default:
 			assert(!"Invalid code page.");
 			return;
@@ -294,7 +294,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			    gsl::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
 		});                                                                                            \
 		break;
-#include <IncludedEncoding.h>
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
 		default:
 			assert(!"Invalid code page.");
 			return;

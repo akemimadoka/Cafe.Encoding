@@ -1,5 +1,5 @@
-#include <Encoding/RuntimeUnicodeData.h>
-#include <Encoding/UnicodeData.h>
+#include <Cafe/Encoding/RuntimeUnicodeData.h>
+#include <Cafe/Encoding/UnicodeData.h>
 
 namespace Cafe::Encoding
 {
@@ -36,7 +36,7 @@ namespace Cafe::Encoding
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
 	result[codeValue] = i++;
-#include <Encoding/Impl/UnicodeData.h>
+#include <Cafe/Encoding/Impl/UnicodeData.h>
 			return result;
 		}
 		();
@@ -99,7 +99,7 @@ namespace Cafe::Encoding
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
 	, codeValue
-#include <Encoding/Impl/UnicodeData.h>
+#include <Cafe/Encoding/Impl/UnicodeData.h>
 		    >>;
 
 		bool IsInUnicodeData(CodePointType codePoint) noexcept

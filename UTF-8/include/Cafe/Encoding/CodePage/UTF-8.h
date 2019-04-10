@@ -1,8 +1,8 @@
 #ifndef CAFE_ENCODING_CODEPAGE_UTF8_H
 #define CAFE_ENCODING_CODEPAGE_UTF8_H
 
-#include <Encoding/Encode.h>
-#include <Encoding/Strings.h>
+#include <Cafe/Encoding/Encode.h>
+#include <Cafe/Encoding/Strings.h>
 
 namespace Cafe::Encoding
 {
@@ -210,20 +210,42 @@ namespace Cafe::Encoding
 		};
 	} // namespace CodePage
 
+#if __cpp_lib_is_constant_evaluated >= 201811L
+	template <CodePage::CodePageType ToCodePageValue>
+	struct Encoder<CodePage::Utf8, ToCodePageValue>
+	{
+		using Trait = CodePage::CodePageTrait<CodePage::Utf8>;
+		using CharType = typename Trait::CharType;
+
+		template <std::ptrdiff_t Extent, typename OutputReceiver>
+		static constexpr void EncodeAll(gsl::span<const CharType, Extent> const& span,
+		                                OutputReceiver&& receiver)
+		{
+			if (std::is_constant_evaluated())
+			{
+				return EncoderBase<CodePage::Utf8, ToCodePageValue>::EncodeAll(
+				    span, std::forward<OutputReceiver>(receiver));
+			}
+			else
+			{
+				// TODO: 针对运行期优化，使用 SIMD
+			}
+		}
+	};
+#endif
+
 	namespace StringLiterals
 	{
 #if __cpp_char8_t >= 201811L
 		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
 
-		constexpr StringView<CodePage::Utf8>
-		operator""_sv(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
-		              std::size_t size) noexcept
+		constexpr StringView<CodePage::Utf8> operator""_sv(const char8_t* str,
+		                                                   std::size_t size) noexcept
 		{
 			return gsl::make_span(str, size);
 		}
 
-		inline String<CodePage::Utf8>
-		operator""_s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
+		inline String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
 		{
 			return String<CodePage::Utf8>{ gsl::make_span(str, size) };
 		}
@@ -244,9 +266,13 @@ namespace Cafe::Encoding
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding
 
-#define CAFE_UTF8_IMPL(str) u8 ## str
+#define CAFE_UTF8_IMPL(str) u8##str
 #define CAFE_UTF8(str) CAFE_UTF8_IMPL(str)
-#define CAFE_UTF8_SV(str) ::Cafe::Encoding::StringView<CodePage::Utf8, std::size(CAFE_UTF8_IMPL(str))>{ CAFE_UTF8_IMPL(str) }
+#define CAFE_UTF8_SV(str)                                                                          \
+	::Cafe::Encoding::StringView<CodePage::Utf8, std::size(CAFE_UTF8_IMPL(str))>                     \
+	{                                                                                                \
+		CAFE_UTF8_IMPL(str)                                                                            \
+	}
 
 #endif
 

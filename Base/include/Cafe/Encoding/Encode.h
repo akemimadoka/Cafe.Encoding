@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CodePage.h"
-#include <Misc/TypeTraits.h>
+#include <Cafe/Misc/TypeTraits.h>
 #include <gsl/span>
 
 namespace Cafe::Encoding
@@ -150,10 +150,9 @@ namespace Cafe::Encoding
 	struct EncoderBase
 	{
 		using FromCodePageTrait = CodePage::CodePageTrait<FromCodePageValue>;
-		using EncodeUnitType = std::conditional_t<
-		    FromCodePageTrait::IsVariableWidth,
-		    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>,
-		    typename FromCodePageTrait::CharType>;
+		using CharType = typename FromCodePageTrait::CharType;
+		using EncodeUnitType =
+		    std::conditional_t<FromCodePageTrait::IsVariableWidth, gsl::span<const CharType>, CharType>;
 
 		template <typename OutputReceiver>
 		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
@@ -164,7 +163,7 @@ namespace Cafe::Encoding
 				{
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>{
-					        encodeUnit, encodeUnit.size() });
+					        encodeUnit, static_cast<std::size_t>(encodeUnit.size()) });
 				}
 				else
 				{
@@ -215,18 +214,15 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t Extent, typename OutputReceiver>
-		static constexpr void
-		EncodeAll(gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType,
-		                    Extent> const& span,
-		          OutputReceiver&& receiver)
+		static constexpr void EncodeAll(gsl::span<const CharType, Extent> const& span,
+		                                OutputReceiver&& receiver)
 		{
-			gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> remainedSpan =
-			    span;
+			gsl::span<const CharType> remainedSpan = span;
 			while (!remainedSpan.empty())
 			{
 				const auto encodeUnit = [&]() constexpr
 				{
-					if constexpr (CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth)
+					if constexpr (FromCodePageTrait::IsVariableWidth)
 					{
 						return remainedSpan;
 					}
@@ -239,7 +235,7 @@ namespace Cafe::Encoding
 				Encode(encodeUnit, [&](auto const& result) {
 					if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 					{
-						if constexpr (CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth)
+						if constexpr (FromCodePageTrait::IsVariableWidth)
 						{
 							remainedSpan = remainedSpan.subspan(result.AdvanceCount);
 						}
@@ -251,8 +247,7 @@ namespace Cafe::Encoding
 					else
 					{
 						// 出现错误时终止循环
-						remainedSpan =
-						    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType>{};
+						remainedSpan = gsl::span<const CharType>{};
 					}
 
 					std::forward<OutputReceiver>(receiver)(result);

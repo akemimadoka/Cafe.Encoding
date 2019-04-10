@@ -1,11 +1,11 @@
-#include <Encoding/Encode.h>
-#include <Encoding/Strings.h>
+#include <Cafe/Encoding/Encode.h>
+#include <Cafe/Encoding/Strings.h>
 #include <catch2/catch.hpp>
 
-#if __has_include(<Encoding/CodePage/UTF-8.h>) && __has_include(<Encoding/CodePage/UTF-16.h>)
+#if __has_include(<Cafe/Encoding/CodePage/UTF-8.h>) && __has_include(<Cafe/Encoding/CodePage/UTF-16.h>)
 
-#	include <Encoding/CodePage/UTF-16.h>
-#	include <Encoding/CodePage/UTF-8.h>
+#	include <Cafe/Encoding/CodePage/UTF-16.h>
+#	include <Cafe/Encoding/CodePage/UTF-8.h>
 
 using namespace Cafe;
 using namespace Encoding;

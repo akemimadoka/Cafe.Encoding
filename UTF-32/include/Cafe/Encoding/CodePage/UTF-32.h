@@ -1,7 +1,8 @@
 #ifndef CAFE_ENCODING_CODEPAGE_UTF32_H
 #define CAFE_ENCODING_CODEPAGE_UTF32_H
 
-#include <Encoding/Encode.h>
+#include <Cafe/Encoding/Encode.h>
+#include <Cafe/Encoding/Strings.h>
 
 namespace Cafe::Encoding
 {

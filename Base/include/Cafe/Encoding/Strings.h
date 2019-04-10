@@ -95,7 +95,7 @@ namespace Cafe::Encoding
 						{
 							m_Allocator->~Allocator();
 							new (static_cast<void*>(this))
-							    StringStorage(gsl::make_span(other.GetStorage(), other.GetSize()), m_Allocator);
+							    StringStorage(gsl::make_span(other.GetStorage(), other.GetSize()), other.m_Allocator);
 						}
 						else
 						{
@@ -145,9 +145,9 @@ namespace Cafe::Encoding
 
 			// 若 Allocator 不同则直接 fallback 到复制，因为无法重用
 			template <std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
-			constexpr StringStorage&
-			operator=(StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
-			              other) noexcept(SsoThresholdSize >= OtherSsoThresholdSize)
+			constexpr StringStorage& operator=(
+			    StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
+			        other) noexcept(SsoThresholdSize >= OtherSsoThresholdSize)
 			{
 				if constexpr (SsoThresholdSize == OtherSsoThresholdSize &&
 				              std::is_same_v<GrowPolicy, OtherGrowPolicy>)
@@ -530,6 +530,8 @@ namespace Cafe::Encoding
 		using reference = value_type&;
 		using const_reference = value_type const&;
 
+		using allocator_type = Allocator;
+
 		template <std::ptrdiff_t Extent = gsl::dynamic_extent>
 		using ViewType = StringView<CodePageValue, Extent>;
 
@@ -574,25 +576,6 @@ namespace Cafe::Encoding
 		                 Allocator const& allocator = Allocator{})
 		    : String{ str.GetSpan(), allocator }
 		{
-		}
-
-		template <CodePage::CodePageType OtherCodePageValue, std::ptrdiff_t Extent,
-		          std::enable_if_t<CodePageValue != OtherCodePageValue, int> = 0>
-		constexpr explicit String(StringView<OtherCodePageValue, Extent> const& otherCodePageStr,
-		                          Allocator const& allocator = Allocator{})
-		    : String{ allocator }
-		{
-			Encoder<OtherCodePageValue, CodePageValue>::EncodeAll(
-			    otherCodePageStr, [this](auto const& result) {
-				    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
-				    {
-					    Append(result.Result);
-				    }
-				    else
-				    {
-					    // TODO: 报告错误
-				    }
-			    });
 		}
 
 		template <typename OtherAllocator, std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
@@ -684,6 +667,16 @@ namespace Cafe::Encoding
 		[[nodiscard]] constexpr const_iterator end() const noexcept
 		{
 			return cend();
+		}
+
+		[[nodiscard]] constexpr pointer GetData() noexcept
+		{
+			return m_Storage.GetStorage();
+		}
+
+		[[nodiscard]] constexpr const_pointer GetData() const noexcept
+		{
+			return m_Storage.GetStorage();
 		}
 
 		[[nodiscard]] constexpr reference operator[](difference_type index) noexcept
