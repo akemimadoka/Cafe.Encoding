@@ -30,5 +30,4 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Cafe/Encoding/Config/IncludedEncoding.
     DESTINATION include/Cafe/Encoding/Config)
 
 install(EXPORT Encoding.RuntimeEncoding
-    NAMESPACE Cafe.
     DESTINATION cmake/Encoding.RuntimeEncoding)

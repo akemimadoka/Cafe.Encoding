@@ -44,5 +44,4 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.h")
 
 install(EXPORT Encoding.UnicodeData
-    NAMESPACE Cafe.
     DESTINATION cmake/Encoding.UnicodeData)

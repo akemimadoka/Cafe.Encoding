@@ -17,5 +17,4 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.h")
 
 install(EXPORT Encoding.Base
-    NAMESPACE Cafe.
     DESTINATION cmake/Encoding.Base)
