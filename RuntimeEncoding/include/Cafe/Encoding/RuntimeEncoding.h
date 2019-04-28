@@ -1,8 +1,10 @@
 #pragma once
 
-#include <Cafe/Encoding/Encode.h>
 #include <Cafe/Encoding/Config/IncludedEncoding.h> // 提前包含以阻止错误引入声明
+#include <Cafe/Encoding/Encode.h>
 #include <cstring>
+#include <optional>
+#include <string_view>
 
 namespace Cafe::Encoding::RuntimeEncoding
 {
@@ -10,6 +12,22 @@ namespace Cafe::Encoding::RuntimeEncoding
 #define CAFE_CODEPAGE(codePageValue) , codePageValue
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	                                                   >;
+
+	std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
+	std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
+
+#ifdef _WIN32
+	CodePage::CodePageType GetAnsiEncoding() noexcept;
+	constexpr CodePage::CodePageType GetWideEncoding() noexcept
+	{
+		return CodePage::WideCharCodePage;
+	}
+#else
+	constexpr CodePage::CodePageType GetNarrowCharEncoding() noexcept
+	{
+		return CodePage::NarrowCharCodePage;
+	}
+#endif
 
 	template <typename ResultUnitType>
 	struct RuntimeEncodingResult

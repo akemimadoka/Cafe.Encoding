@@ -12,6 +12,10 @@ namespace Cafe::Encoding
 		constexpr CodePageType Utf16LittleEndian = static_cast<CodePageType>(1200);
 		constexpr CodePageType Utf16BigEndian = static_cast<CodePageType>(1201);
 
+#if defined(_WIN32)
+		constexpr CodePageType WideCharCodePage = Utf16LittleEndian;
+#endif
+
 		namespace Detail
 		{
 			struct Utf16CommonPartBase

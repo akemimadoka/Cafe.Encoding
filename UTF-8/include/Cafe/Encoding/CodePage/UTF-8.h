@@ -10,6 +10,10 @@ namespace Cafe::Encoding
 	{
 		constexpr CodePageType Utf8 = static_cast<CodePageType>(65001);
 
+#if defined(__linux__)
+		constexpr CodePageType NarrowCharCodePage = Utf8;
+#endif
+
 		template <>
 		struct CodePageTrait<CodePage::Utf8>
 		{
@@ -27,6 +31,8 @@ namespace Cafe::Encoding
 
 			// 定长编码无此方法
 			// 0 表示错误，负数的绝对值表示若需确定至少需要前移并重新测试的个数
+			// 在特殊情况下 GetWidth 可能无法获得长度，这不意味着 ToCodePoint 必然也失败
+			// 请查阅对应的特化版本的文档以决定是否考虑此类情况，UTF-8 不会存在此情况
 			[[nodiscard]] static constexpr std::ptrdiff_t GetWidth(CharType value) noexcept
 			{
 				const auto codeValue = static_cast<std::make_unsigned_t<CharType>>(value);
@@ -269,9 +275,9 @@ namespace Cafe::Encoding
 #define CAFE_UTF8_IMPL(str) u8##str
 #define CAFE_UTF8(str) CAFE_UTF8_IMPL(str)
 #define CAFE_UTF8_SV(str)                                                                          \
-	::Cafe::Encoding::StringView<CodePage::Utf8, std::size(CAFE_UTF8_IMPL(str))>                     \
+	::Cafe::Encoding::StringView<::Cafe::Encoding::CodePage::Utf8, std::size(CAFE_UTF8(str))>        \
 	{                                                                                                \
-		CAFE_UTF8_IMPL(str)                                                                            \
+		CAFE_UTF8(str)                                                                                 \
 	}
 
 #endif

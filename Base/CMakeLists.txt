@@ -1,12 +1,3 @@
-# set(SOURCE_FILES src/Strings.cpp)
-
-# set(HEADERS
-#     include/Encoding/CodePage.h
-#     include/Encoding/CodePointIterator.h
-#     include/Encoding/Encode.h
-#     include/Encoding/Exceptions.h
-#     include/Encoding/Strings.h)
-
 add_library(Cafe.Encoding.Base INTERFACE)
 
 target_include_directories(Cafe.Encoding.Base INTERFACE

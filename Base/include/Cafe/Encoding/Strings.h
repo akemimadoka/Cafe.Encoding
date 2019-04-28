@@ -94,8 +94,8 @@ namespace Cafe::Encoding
 						if (other.m_Capacity <= OtherSsoThresholdSize)
 						{
 							m_Allocator->~Allocator();
-							new (static_cast<void*>(this))
-							    StringStorage(gsl::make_span(other.GetStorage(), other.GetSize()), other.m_Allocator);
+							new (static_cast<void*>(this)) StringStorage(
+							    gsl::make_span(other.GetStorage(), other.GetSize()), other.m_Allocator);
 						}
 						else
 						{
@@ -145,9 +145,9 @@ namespace Cafe::Encoding
 
 			// 若 Allocator 不同则直接 fallback 到复制，因为无法重用
 			template <std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
-			constexpr StringStorage& operator=(
-			    StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
-			        other) noexcept(SsoThresholdSize >= OtherSsoThresholdSize)
+			constexpr StringStorage&
+			operator=(StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
+			              other) noexcept(SsoThresholdSize >= OtherSsoThresholdSize)
 			{
 				if constexpr (SsoThresholdSize == OtherSsoThresholdSize &&
 				              std::is_same_v<GrowPolicy, OtherGrowPolicy>)
@@ -244,6 +244,12 @@ namespace Cafe::Encoding
 				m_Size = newSize;
 			}
 
+			constexpr void UncheckedAppend(CharType value, std::size_t count = 1)
+			{
+				std::fill_n(GetStorage() + m_Size, count, value);
+				m_Size += count;
+			}
+
 			template <std::ptrdiff_t Extent>
 			constexpr void Append(gsl::span<const CharType, Extent> const& src)
 			{
@@ -257,6 +263,17 @@ namespace Cafe::Encoding
 				UncheckedAppend(src);
 			}
 
+			constexpr void Append(CharType value, std::size_t count = 1)
+			{
+				const auto newSize = m_Size + count;
+				if (newSize > m_Capacity)
+				{
+					Reserve(GrowPolicy::Grow(m_Capacity, newSize));
+				}
+
+				UncheckedAppend(value, count);
+			}
+
 			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行赋值操作
 			template <std::ptrdiff_t Extent>
 			constexpr void UncheckedAssign(gsl::span<const CharType, Extent> const& src)
@@ -266,12 +283,25 @@ namespace Cafe::Encoding
 				m_Size = newSize;
 			}
 
+			constexpr void UncheckedAssign(CharType value, std::size_t count = 1)
+			{
+				std::fill_n(GetStorage(), count, value);
+				m_Size = count;
+			}
+
 			template <std::ptrdiff_t Extent>
 			constexpr void Assign(gsl::span<const CharType, Extent> const& src)
 			{
 				const auto newSize = src.size();
 				Reserve(newSize);
 				UncheckedAssign(src);
+			}
+
+			constexpr void Assign(CharType value, std::size_t count = 1)
+			{
+				const auto newSize = count;
+				Reserve(newSize);
+				UncheckedAssign(value, count);
 			}
 
 			constexpr void ShrinkToFit()
@@ -310,7 +340,47 @@ namespace Cafe::Encoding
 				CharType* m_DynamicStorage;
 			};
 		};
+
+		template <std::size_t Size>
+		class StringFindingCacheStorage
+		{
+		protected:
+			std::array<Core::Misc::UnsignedMinTypeToHold<Size>, Size> m_Cache;
+		};
+
+		template <>
+		class StringFindingCacheStorage<std::numeric_limits<std::size_t>::max()>
+		{
+		protected:
+			StringFindingCacheStorage(std::size_t size) : m_Cache{ std::make_unique<std::size_t[]>(size) }
+			{
+			}
+
+			std::unique_ptr<std::size_t[]> m_Cache;
+		};
 	} // namespace Detail
+
+	template <CodePage::CodePageType CodePageValue,
+	          typename Allocator =
+	              std::allocator<typename CodePage::CodePageTrait<CodePageValue>::CharType>,
+	          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
+	          typename GrowPolicy = Detail::DefaultGrowPolicy>
+	class String;
+
+	template <typename T>
+	struct IsStringTrait : std::false_type
+	{
+	};
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy>
+	struct IsStringTrait<String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>>
+	    : std::true_type
+	{
+	};
+
+	template <typename T>
+	constexpr bool IsString = IsStringTrait<T>::value;
 
 	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent = gsl::dynamic_extent>
 	class StringView
@@ -321,6 +391,7 @@ namespace Cafe::Encoding
 	private:
 		using UsingCodePageTrait = CodePage::CodePageTrait<UsingCodePage>;
 		using CharType = typename UsingCodePageTrait::CharType;
+		using SpanType = gsl::span<const CharType, Extent>;
 
 	public:
 		using const_pointer = const CharType*;
@@ -328,8 +399,6 @@ namespace Cafe::Encoding
 
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using reverse_iterator = std::reverse_iterator<iterator>;
-		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 		using value_type = CharType;
 		using size_type = std::size_t;
@@ -341,7 +410,7 @@ namespace Cafe::Encoding
 		{
 		}
 
-		constexpr StringView(gsl::span<const CharType, Extent> const& span) noexcept : m_Span{ span }
+		constexpr StringView(SpanType const& span) noexcept : m_Span{ span }
 		{
 		}
 
@@ -350,14 +419,32 @@ namespace Cafe::Encoding
 		{
 		}
 
+		constexpr StringView(StringView const&) noexcept = default;
+		constexpr StringView(StringView&&) noexcept = default;
+		constexpr StringView& operator=(StringView const&) noexcept = default;
+		constexpr StringView& operator=(StringView&&) noexcept = default;
+
+		template <std::ptrdiff_t OtherExtent>
+		constexpr StringView(StringView<CodePageValue, OtherExtent> const& other) noexcept
+		    : StringView(other.GetSpan())
+		{
+		}
+
+		template <std::ptrdiff_t OtherExtent>
+		constexpr StringView& operator=(StringView<CodePageValue, OtherExtent> const& other) noexcept
+		{
+			m_Span = other.GetSpan();
+			return *this;
+		}
+
 		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
 		{
-			return &*m_Span.begin();
+			return m_Span.data();
 		}
 
 		[[nodiscard]] constexpr const_iterator cend() const noexcept
 		{
-			return &*m_Span.end();
+			return m_Span.data() + m_Span.size();
 		}
 
 		[[nodiscard]] constexpr const_iterator begin() const noexcept
@@ -385,12 +472,13 @@ namespace Cafe::Encoding
 			return !GetSize();
 		}
 
-		[[nodiscard]] constexpr StringView SubStr(size_type begin, size_type size) const noexcept
+		[[nodiscard]] constexpr StringView<CodePageValue>
+		SubStr(size_type begin, size_type size = gsl::dynamic_extent) const noexcept
 		{
-			return StringView{ m_Span.subspan(begin, size) };
+			return StringView<CodePageValue>{ m_Span.subspan(begin, size) };
 		}
 
-		[[nodiscard]] constexpr gsl::span<const CharType, Extent> GetSpan() const noexcept
+		[[nodiscard]] constexpr SpanType GetSpan() const noexcept
 		{
 			return m_Span;
 		}
@@ -437,8 +525,36 @@ namespace Cafe::Encoding
 			return 0;
 		}
 
+		template <std::ptrdiff_t OtherExtent>
+		constexpr bool BeginWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
+		{
+			if (other.GetSize() > GetSize())
+			{
+				return false;
+			}
+
+			return SubStr(0, other.GetSize()).Compare(other) == 0;
+		}
+
+		template <std::ptrdiff_t OtherExtent>
+		constexpr bool EndWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
+		{
+			if (other.GetSize() > GetSize())
+			{
+				return false;
+			}
+
+			return SubStr(GetSize() - other.GetSize()).Compare(other) == 0;
+		}
+
+		template <typename Allocator =
+		              std::allocator<typename CodePage::CodePageTrait<CodePageValue>::CharType>,
+		          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
+		          typename GrowPolicy = Detail::DefaultGrowPolicy>
+		String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy> ToString() const;
+
 	private:
-		gsl::span<const CharType, Extent> m_Span;
+		SpanType m_Span;
 	};
 
 	template <CodePage::CodePageType CodePageValue, std::size_t N>
@@ -498,11 +614,164 @@ namespace Cafe::Encoding
 		return a.Compare(b) <= 0;
 	}
 
-	template <CodePage::CodePageType CodePageValue,
-	          typename Allocator =
-	              std::allocator<typename CodePage::CodePageTrait<CodePageValue>::CharType>,
-	          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
-	          typename GrowPolicy = Detail::DefaultGrowPolicy>
+	template <typename T>
+	struct IsStringViewTrait : std::false_type
+	{
+	};
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent>
+	struct IsStringViewTrait<StringView<CodePageValue, Extent>> : std::true_type
+	{
+	};
+
+	template <typename T>
+	constexpr bool IsStringView = IsStringViewTrait<T>::value;
+
+	template <CodePage::CodePageType CodePageValue, std::size_t MaxSize>
+	class StaticString
+	{
+	public:
+		static constexpr CodePage::CodePageType UsingCodePage = CodePageValue;
+
+	private:
+		using UsingCodePageTrait = CodePage::CodePageTrait<CodePageValue>;
+		using CharType = typename UsingCodePageTrait::CharType;
+
+	public:
+		using pointer = CharType*;
+		using const_pointer = const CharType*;
+
+		using iterator = pointer;
+		using const_iterator = const_pointer;
+
+		using value_type = CharType;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
+
+		using reference = value_type&;
+		using const_reference = value_type const&;
+
+		constexpr StaticString() noexcept : m_Size{}
+		{
+		}
+
+		constexpr StaticString(CharType ch, std::size_t count = 1) noexcept : m_Size{ count }
+		{
+			std::fill_n(m_Storage.data(), count, ch);
+		}
+
+		template <std::ptrdiff_t Extent,
+		          std::enable_if_t<Extent == gsl::dynamic_extent || Extent <= MaxSize, int> = 0>
+		constexpr StaticString(StringView<CodePageValue, Extent> const& str) noexcept
+		{
+			Assign(str);
+		}
+
+		[[nodiscard]] constexpr StringView<CodePageValue> GetView() const noexcept
+		{
+			return gsl::make_span(m_Storage.data(), m_Size);
+		}
+
+		template <std::ptrdiff_t Extent,
+		          std::enable_if_t<Extent == gsl::dynamic_extent || Extent <= MaxSize, int> = 0>
+		constexpr StaticString& Assign(StringView<CodePageValue, Extent> const& str) noexcept
+		{
+			if constexpr (Extent == gsl::dynamic_extent)
+			{
+				m_Size = std::min(str.GetSize(), MaxSize);
+			}
+			else
+			{
+				m_Size = Extent;
+			}
+
+			std::copy_n(str.GetData(), m_Size, m_Storage.data());
+		}
+
+		[[nodiscard]] constexpr reference operator[](std::size_t i) noexcept
+		{
+			return m_Storage[i];
+		}
+
+		[[nodiscard]] constexpr const_reference operator[](std::size_t i) const noexcept
+		{
+			return m_Storage[i];
+		}
+
+		[[nodiscard]] constexpr pointer GetData() noexcept
+		{
+			return m_Storage.data();
+		}
+
+		[[nodiscard]] constexpr const_pointer GetData() const noexcept
+		{
+			return m_Storage.data();
+		}
+
+		[[nodiscard]] constexpr gsl::span<CharType> GetSpan() noexcept
+		{
+			return { m_Storage.data(), m_Size };
+		}
+
+		[[nodiscard]] constexpr gsl::span<const CharType> GetSpan() const noexcept
+		{
+			return { m_Storage.data(), m_Size };
+		}
+
+		[[nodiscard]] constexpr iterator begin() noexcept
+		{
+			return m_Storage.data();
+		}
+
+		[[nodiscard]] constexpr iterator end() noexcept
+		{
+			return m_Storage.data() + m_Size;
+		}
+
+		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
+		{
+			return m_Storage.data();
+		}
+
+		[[nodiscard]] constexpr const_iterator cend() const noexcept
+		{
+			return m_Storage.data() + m_Size;
+		}
+
+		[[nodiscard]] constexpr const_iterator begin() const noexcept
+		{
+			return cbegin();
+		}
+
+		[[nodiscard]] constexpr const_iterator end() const noexcept
+		{
+			return cend();
+		}
+
+	private:
+		std::array<CharType, MaxSize> m_Storage;
+		std::size_t m_Size;
+	};
+
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent,
+	          std::enable_if_t<Extent != gsl::dynamic_extent, int> = 0>
+	StaticString(StringView<CodePageValue, Extent> const& str)->StaticString<CodePageValue, Extent>;
+
+	template <typename T>
+	struct IsStaticStringTrait : std::false_type
+	{
+	};
+
+	template <CodePage::CodePageType CodePageValue, std::size_t MaxSize>
+	struct IsStaticStringTrait<StaticString<CodePageValue, MaxSize>> : std::true_type
+	{
+	};
+
+	template <typename T>
+	constexpr bool IsStaticString = IsStaticStringTrait<T>::value;
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy>
 	class String
 	{
 	public:
@@ -520,8 +789,6 @@ namespace Cafe::Encoding
 
 		using iterator = pointer;
 		using const_iterator = const_pointer;
-		using reverse_iterator = std::reverse_iterator<iterator>;
-		using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 		using value_type = CharType;
 		using size_type = std::size_t;
@@ -620,6 +887,11 @@ namespace Cafe::Encoding
 			m_Storage.Assign(src);
 		}
 
+		constexpr void Assign(CharType value, size_type count = 1)
+		{
+			m_Storage.Assign(value, count);
+		}
+
 		template <std::ptrdiff_t Extent>
 		constexpr String& operator=(gsl::span<const CharType, Extent> const& src)
 		{
@@ -637,6 +909,11 @@ namespace Cafe::Encoding
 		constexpr void Append(ViewType<Extent> const& src)
 		{
 			m_Storage.Append(src.GetSpan());
+		}
+
+		constexpr void Append(CharType value, size_type count = 1)
+		{
+			m_Storage.Append(value, count);
 		}
 
 		[[nodiscard]] constexpr iterator begin() noexcept
@@ -689,6 +966,16 @@ namespace Cafe::Encoding
 			return m_Storage.GetStorage()[index];
 		}
 
+		constexpr void Reserve(size_type newCapacity)
+		{
+			m_Storage.Reserve(newCapacity);
+		}
+
+		constexpr void Resize(size_type newSize, CharType value = CharType{})
+		{
+			m_Storage.Resize(newSize, value);
+		}
+
 		[[nodiscard]] constexpr size_type GetSize() const noexcept
 		{
 			return m_Storage.GetSize();
@@ -723,15 +1010,24 @@ namespace Cafe::Encoding
 		UsingStorageType m_Storage;
 	};
 
+	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent>
+	template <typename Allocator, std::size_t SsoThresholdSize, typename GrowPolicy>
+	String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
+	StringView<CodePageValue, Extent>::ToString() const
+	{
+		return String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
+		              GrowPolicy>{ *this };
+	}
+
 #if __cpp_nontype_template_parameter_class >= 201806L
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue,
 	          StringView<FromCodePageValue> str>
 	constexpr auto StaticEncode() noexcept
 	{
-		std::array<typename CodePage::CodePageTrait<ToCodePageValue>::CharType,
-		           CountEncodeSize<FromCodePageValue, ToCodePageValue>(str.GetSpan())>
+		StaticString<ToCodePageValue,
+		             CountEncodeSize<FromCodePageValue, ToCodePageValue>(str.GetSpan())>
 		    result{};
-		auto iter = result.data();
+		auto iter = result.GetData();
 		Encoder<FromCodePageValue, ToCodePageValue>::EncodeAll(span, [&](auto const& result) {
 			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 			{
