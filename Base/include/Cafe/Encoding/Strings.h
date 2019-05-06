@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Encode.h"
+#include <cassert>
 #include <gsl/span>
 #include <memory>
 
@@ -24,7 +25,7 @@ namespace Cafe::Encoding
 			}
 		};
 
-		// 管理字符串的存储，不保证 0 结尾
+		// 管理字符串的存储，保证 0 结尾
 		// 仅提供会导致分配去配及提供必要信息的操作，其他操作由外部实现
 		template <typename CharType, typename Allocator,
 		          std::size_t SsoThresholdSize = DefaultSsoThresholdSize,
@@ -47,16 +48,30 @@ namespace Cafe::Encoding
 			                        Allocator const& allocator = Allocator{})
 			    : m_Allocator{ allocator }, m_Size{ static_cast<std::size_t>(src.size()) }
 			{
-				if (m_Size > SsoThresholdSize)
+				if (src.empty())
 				{
+					m_Capacity = SsoThresholdSize;
+					return;
+				}
+
+				const auto isSrcNullTerminated = src[src.size() - 1] == CharType{};
+
+				// 若 src 以 0 结尾则删去 1 位
+				m_Size -= isSrcNullTerminated;
+				const auto allocatingSize = m_Size + 1;
+
+				if (allocatingSize > SsoThresholdSize)
+				{
+					m_Capacity = allocatingSize;
 					m_DynamicStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, m_Capacity);
-					m_Capacity = m_Size;
 					std::copy_n(src.data(), m_Size, m_DynamicStorage);
+					m_DynamicStorage[allocatingSize - 1] = CharType{};
 				}
 				else
 				{
 					m_Capacity = SsoThresholdSize;
 					std::copy_n(src.data(), m_Size, m_SsoStorage);
+					m_SsoStorage[allocatingSize - 1] = CharType{};
 				}
 			}
 
@@ -69,6 +84,7 @@ namespace Cafe::Encoding
 			}
 
 			// 若 Allocator 类型不同则直接 fallback 到复制，因为无法重用
+			// StringStorage 的存储必定以 0 结尾，因此不需额外检查，直接复制即可
 			template <std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
 			constexpr StringStorage(
 			    StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
@@ -111,7 +127,7 @@ namespace Cafe::Encoding
 
 				m_Size = other.m_Size;
 				m_Capacity = other.m_Capacity;
-				std::copy_n(other.GetStorage(), m_Size, m_SsoStorage);
+				std::copy_n(other.GetStorage(), m_Size + 1, m_SsoStorage);
 			}
 
 			~StringStorage()
@@ -173,12 +189,14 @@ namespace Cafe::Encoding
 				return *this;
 			}
 
+			/// @brief  获得内容占据的大小，包含结尾的空字符
 			[[nodiscard]] constexpr std::size_t GetSize() const noexcept
 			// [[ensures result : result <= GetCapacity()]]
 			{
-				return m_Size;
+				return m_Size + 1;
 			}
 
+			/// @brief  获得已分配的大小，包含结尾的空字符
 			[[nodiscard]] constexpr std::size_t GetCapacity() const noexcept
 			// [[ensures result : result >= SsoThresholdSize]]
 			{
@@ -234,13 +252,16 @@ namespace Cafe::Encoding
 				m_Size = newSize;
 			}
 
-			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行追加操作
+			/// @remark  用于在已确保 Reserve 足够内存的情况下不检查边界进行追加操作
 			template <std::ptrdiff_t Extent>
 			constexpr void UncheckedAppend(gsl::span<const CharType, Extent> const& src)
 			{
-				const auto srcSize = src.size();
+				auto srcSize = src.size();
+				const auto isSrcNullTerminated = src[srcSize - 1] == CharType{};
+				srcSize -= isSrcNullTerminated;
 				const auto newSize = m_Size + srcSize;
 				std::copy_n(src.data(), srcSize, GetStorage() + m_Size);
+				GetStorage()[newSize] = CharType{};
 				m_Size = newSize;
 			}
 
@@ -248,16 +269,23 @@ namespace Cafe::Encoding
 			{
 				std::fill_n(GetStorage() + m_Size, count, value);
 				m_Size += count;
+				GetStorage()[m_Size] = CharType{};
 			}
 
 			template <std::ptrdiff_t Extent>
 			constexpr void Append(gsl::span<const CharType, Extent> const& src)
 			{
-				const auto srcSize = src.size();
-				const auto newSize = m_Size + srcSize;
-				if (newSize > m_Capacity)
+				if (src.empty())
 				{
-					Reserve(GrowPolicy::Grow(m_Capacity, newSize));
+					return;
+				}
+
+				const auto srcSize = src.size();
+				const auto isSrcNullTerminated = src[srcSize - 1] == CharType{};
+				const auto newCapacity = m_Size + srcSize + !isSrcNullTerminated;
+				if (newCapacity > m_Capacity)
+				{
+					Reserve(GrowPolicy::Grow(m_Capacity, newCapacity));
 				}
 
 				UncheckedAppend(src);
@@ -265,43 +293,46 @@ namespace Cafe::Encoding
 
 			constexpr void Append(CharType value, std::size_t count = 1)
 			{
-				const auto newSize = m_Size + count;
-				if (newSize > m_Capacity)
+				const auto newCapacity = m_Size + count + 1;
+				if (newCapacity > m_Capacity)
 				{
-					Reserve(GrowPolicy::Grow(m_Capacity, newSize));
+					Reserve(GrowPolicy::Grow(m_Capacity, newCapacity));
 				}
 
 				UncheckedAppend(value, count);
+			}
+
+			constexpr void Clear() noexcept
+			{
+				m_Size = 0;
+				GetStorage()[0] = CharType{};
 			}
 
 			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行赋值操作
 			template <std::ptrdiff_t Extent>
 			constexpr void UncheckedAssign(gsl::span<const CharType, Extent> const& src)
 			{
-				const auto newSize = src.size();
-				std::copy_n(src.data(), newSize, GetStorage());
-				m_Size = newSize;
+				Clear();
+				UncheckedAppend(src);
 			}
 
 			constexpr void UncheckedAssign(CharType value, std::size_t count = 1)
 			{
-				std::fill_n(GetStorage(), count, value);
-				m_Size = count;
+				Clear();
+				UncheckedAppend(value, count);
 			}
 
 			template <std::ptrdiff_t Extent>
 			constexpr void Assign(gsl::span<const CharType, Extent> const& src)
 			{
-				const auto newSize = src.size();
-				Reserve(newSize);
-				UncheckedAssign(src);
+				Clear();
+				Append(src);
 			}
 
 			constexpr void Assign(CharType value, std::size_t count = 1)
 			{
-				const auto newSize = count;
-				Reserve(newSize);
-				UncheckedAssign(value, count);
+				Clear();
+				Append(value, count);
 			}
 
 			constexpr void ShrinkToFit()
@@ -344,19 +375,44 @@ namespace Cafe::Encoding
 		template <std::size_t Size>
 		class StringFindingCacheStorage
 		{
-		protected:
+		public:
+			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size>, Size> GetCacheContent() noexcept
+			{
+				return m_Cache;
+			}
+
+			constexpr gsl::span<const Core::Misc::UnsignedMinTypeToHold<Size>, Size>
+			GetCacheContent() const noexcept
+			{
+				return m_Cache;
+			}
+
+		private:
 			std::array<Core::Misc::UnsignedMinTypeToHold<Size>, Size> m_Cache;
 		};
 
 		template <>
 		class StringFindingCacheStorage<std::numeric_limits<std::size_t>::max()>
 		{
-		protected:
-			StringFindingCacheStorage(std::size_t size) : m_Cache{ std::make_unique<std::size_t[]>(size) }
+		public:
+			StringFindingCacheStorage(std::size_t size)
+			    : m_Cache{ std::make_unique<std::size_t[]>(size) }, m_CacheSize{ size }
 			{
 			}
 
+			gsl::span<std::size_t> GetCacheContent() noexcept
+			{
+				return gsl::make_span(m_Cache.get(), m_CacheSize);
+			}
+
+			gsl::span<const std::size_t> GetCacheContent() const noexcept
+			{
+				return gsl::make_span(m_Cache.get(), m_CacheSize);
+			}
+
+		private:
 			std::unique_ptr<std::size_t[]> m_Cache;
+			std::size_t m_CacheSize;
 		};
 	} // namespace Detail
 
@@ -382,6 +438,9 @@ namespace Cafe::Encoding
 	template <typename T>
 	constexpr bool IsString = IsStringTrait<T>::value;
 
+	/// @brief  字符串视图
+	/// @tparam CodePageValue   使用的编码
+	/// @remark 不保证 0 结尾
 	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent = gsl::dynamic_extent>
 	class StringView
 	{
@@ -483,6 +542,16 @@ namespace Cafe::Encoding
 			return m_Span;
 		}
 
+		[[nodiscard]] constexpr gsl::span<const CharType> GetTrimmedSpan() const noexcept
+		{
+			return m_Span.subspan(0, GetSize() - IsNullTerminated());
+		}
+
+		[[nodiscard]] constexpr StringView<CodePageValue> Trim() const noexcept
+		{
+			return { GetTrimmedSpan() };
+		}
+
 		[[nodiscard]] constexpr const_pointer GetData() const noexcept
 		{
 			return m_Span.data();
@@ -526,7 +595,8 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t OtherExtent>
-		constexpr bool BeginWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
+		[[nodiscard]] constexpr bool
+		BeginWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
 		{
 			if (other.GetSize() > GetSize())
 			{
@@ -537,7 +607,8 @@ namespace Cafe::Encoding
 		}
 
 		template <std::ptrdiff_t OtherExtent>
-		constexpr bool EndWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
+		[[nodiscard]] constexpr bool EndWith(StringView<CodePageValue, OtherExtent> const& other) const
+		    noexcept
 		{
 			if (other.GetSize() > GetSize())
 			{
@@ -547,11 +618,147 @@ namespace Cafe::Encoding
 			return SubStr(GetSize() - other.GetSize()).Compare(other) == 0;
 		}
 
+		[[nodiscard]] constexpr Detail::StringFindingCacheStorage<static_cast<std::size_t>(Extent)>
+		CreateFindingCache() const noexcept(Extent != gsl::dynamic_extent)
+		{
+			auto result = [this]() constexpr
+			                  ->Detail::StringFindingCacheStorage<static_cast<std::size_t>(Extent)>
+			{
+				if constexpr (Extent == gsl::dynamic_extent)
+				{
+					return { GetSize() };
+				}
+				else
+				{
+					return {};
+				}
+			}
+			();
+
+			const auto cacheContent = result.GetCacheContent();
+			CreateFindingCacheAt(cacheContent);
+			return result;
+		}
+
+		/// @brief  以 kmp 算法生成表来加速查找
+		/// @remark 用于在已分配且保证长度足够的存储上创建缓存，可能用于特殊优化
+		constexpr void
+		CreateFindingCacheAt(gsl::span<std::conditional_t<Extent == gsl::dynamic_extent, std::size_t,
+		                                                  Core::Misc::UnsignedMinTypeToHold<Extent>>,
+		                               Extent> const& cacheStorage) const
+		    noexcept(Extent != gsl::dynamic_extent)
+		{
+			if constexpr (Extent == gsl::dynamic_extent)
+			{
+				if (cacheStorage.size() < m_Span.size())
+				{
+					throw std::runtime_error("Cache storage is too small.");
+				}
+			}
+
+			const auto size = m_Span.size();
+
+			if (cacheStorage.empty())
+			{
+				return;
+			}
+
+			cacheStorage[0] = -1;
+
+			if (size == 1)
+			{
+				return;
+			}
+
+			cacheStorage[1] = 0;
+
+			std::size_t candidate = 0;
+			for (std::size_t i = 2; i < size; ++i)
+			{
+				if (m_Span[i - 1] == m_Span[candidate])
+				{
+					cacheStorage[i] = ++candidate;
+				}
+				else
+				{
+					candidate = 0;
+					cacheStorage[i] = 0;
+				}
+			}
+		}
+
+		static constexpr std::size_t Npos = std::size_t(-1);
+
+		template <std::ptrdiff_t OtherExtent>
+		[[nodiscard]] constexpr std::size_t
+		Find(StringView<CodePageValue, OtherExtent> const& pattern,
+		     gsl::span<std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
+		                                  Core::Misc::UnsignedMinTypeToHold<OtherExtent>>,
+		               OtherExtent> const& findingCache) const noexcept
+		{
+			const auto size = m_Span.size();
+			const auto patternSize = pattern.GetSize() - pattern.IsNullTerminated();
+
+			std::size_t i = 0, j = 0;
+			for (; i < size && j < patternSize;)
+			{
+				if (j == Npos || m_Span[i] == pattern.GetData()[j])
+				{
+					++i;
+					++j;
+				}
+				else
+				{
+					j = findingCache[j];
+				}
+			}
+
+			if (j >= patternSize)
+			{
+				return i - patternSize;
+			}
+
+			return Npos;
+		}
+
+		template <std::ptrdiff_t OtherExtent>
+		[[nodiscard]] constexpr std::size_t
+		Find(StringView<CodePageValue, OtherExtent> const& pattern) const
+		    noexcept(OtherExtent != gsl::dynamic_extent)
+		{
+			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
+		}
+
 		template <typename Allocator =
 		              std::allocator<typename CodePage::CodePageTrait<CodePageValue>::CharType>,
 		          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
 		          typename GrowPolicy = Detail::DefaultGrowPolicy>
 		String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy> ToString() const;
+
+		template <typename Allocator>
+		std::basic_string<CharType, std::char_traits<CharType>, Allocator>
+		ToStdString(Allocator allocator = std::allocator<CharType>{}) const noexcept
+		{
+			return std::basic_string<CharType, std::char_traits<CharType>, Allocator>(
+			    GetData(), GetSize(), std::move(allocator));
+		}
+
+		constexpr std::basic_string_view<CharType> ToStdStringView() const noexcept
+		{
+			return { GetData(), GetSize() };
+		}
+
+		/// @brief  判断字符串视图是否以 0 结尾
+		/// @remark 空视图视为不以 0 结尾
+		constexpr bool IsNullTerminated() const noexcept
+		{
+			if (m_Span.empty())
+			{
+				return false;
+			}
+
+			return m_Span[m_Span.size() - 1] == CharType{};
+		}
 
 	private:
 		SpanType m_Span;
@@ -770,6 +977,8 @@ namespace Cafe::Encoding
 	template <typename T>
 	constexpr bool IsStaticString = IsStaticStringTrait<T>::value;
 
+	/// @brief  字符串
+	/// @remark 内部存储保证以 0 结尾，即 GetData()[GetSize()] 保证有效且为 0
 	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
 	          typename GrowPolicy>
 	class String
@@ -956,6 +1165,9 @@ namespace Cafe::Encoding
 			return m_Storage.GetStorage();
 		}
 
+		/// @brief  提供访问内部内容的操作符
+		/// @remark 保证 index 处于 [0, GetSize()) 范围内时结果有效，且 index 为 GetSize() - 1
+		///         时引用的字符必定为空字符
 		[[nodiscard]] constexpr reference operator[](difference_type index) noexcept
 		{
 			return m_Storage.GetStorage()[index];
@@ -976,6 +1188,8 @@ namespace Cafe::Encoding
 			m_Storage.Resize(newSize, value);
 		}
 
+		/// @brief  获得字符串长度，包含结尾的空字符
+		/// @remark 由于结果必定包含空字符，因此最小值为 1
 		[[nodiscard]] constexpr size_type GetSize() const noexcept
 		{
 			return m_Storage.GetSize();
@@ -988,7 +1202,9 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr bool IsEmpty() const noexcept
 		{
-			return !GetSize();
+			const auto size = GetSize();
+			assert(size > 0);
+			return size == 1;
 		}
 
 		[[nodiscard]] constexpr size_type GetCapacity() const noexcept

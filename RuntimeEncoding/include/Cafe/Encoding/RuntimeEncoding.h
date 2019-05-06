@@ -2,6 +2,7 @@
 
 #include <Cafe/Encoding/Config/IncludedEncoding.h> // 提前包含以阻止错误引入声明
 #include <Cafe/Encoding/Encode.h>
+#include <Cafe/Misc/Export.h>
 #include <cstring>
 #include <optional>
 #include <string_view>
@@ -13,11 +14,11 @@ namespace Cafe::Encoding::RuntimeEncoding
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	                                                   >;
 
-	std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
-	std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
+	CAFE_PUBLIC std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
+	CAFE_PUBLIC std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
 
 #ifdef _WIN32
-	CodePage::CodePageType GetAnsiEncoding() noexcept;
+	CAFE_PUBLIC CodePage::CodePageType GetAnsiEncoding() noexcept;
 	constexpr CodePage::CodePageType GetWideEncoding() noexcept
 	{
 		return CodePage::WideCharCodePage;
