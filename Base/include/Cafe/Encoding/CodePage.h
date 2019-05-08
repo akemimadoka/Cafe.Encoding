@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 namespace Cafe::Encoding
 {
@@ -16,6 +17,19 @@ namespace Cafe::Encoding
 
 		template <CodePageType CodePageValue>
 		struct CodePageTrait;
+
+		template <CodePageType CodePageValue>
+		constexpr std::size_t GetMaxWidth() noexcept
+		{
+			if constexpr (CodePageTrait<CodePageValue>::IsVariableWidth)
+			{
+				return CodePageTrait<CodePageValue>::MaxWidth;
+			}
+			else
+			{
+				return 1;
+			}
+		}
 	} // namespace CodePage
 
 	// Unicode 中码点范围为 [0, 0x10FFFF]，因此一个 std::uint32_t 总能容纳任何单个码点

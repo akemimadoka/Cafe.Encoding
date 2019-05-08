@@ -29,6 +29,9 @@ namespace Cafe::Encoding
 			// 编码是否是变长的
 			static constexpr bool IsVariableWidth = true;
 
+			// 能完整组成一个码点表示的最大编码单元个数，定长编码无此字段
+			static constexpr std::size_t MaxWidth = 4;
+
 			// 定长编码无此方法
 			// 0 表示错误，负数的绝对值表示若需确定至少需要前移并重新测试的个数
 			// 在特殊情况下 GetWidth 可能无法获得长度，这不意味着 ToCodePoint 必然也失败

@@ -16,6 +16,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 	CAFE_PUBLIC std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
 	CAFE_PUBLIC std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
+	CAFE_PUBLIC std::size_t GetCodePageMaxWidth(CodePage::CodePageType codePage) noexcept;
 
 #ifdef _WIN32
 	CAFE_PUBLIC CodePage::CodePageType GetAnsiEncoding() noexcept;

@@ -25,6 +25,9 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 		REQUIRE(str2.GetView() == str);
 		str2.Append(pattern);
 		REQUIRE(str2.GetView() == CAFE_UTF8_SV("ababcab"));
+
+		str2.Insert(str2.begin() + 1, CAFE_UTF8_SV("123"));
+		REQUIRE(str2.GetView() == CAFE_UTF8_SV("a123babcab"));
 	}
 }
 #endif

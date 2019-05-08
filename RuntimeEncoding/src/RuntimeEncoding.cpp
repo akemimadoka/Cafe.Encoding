@@ -32,6 +32,20 @@ Cafe::Encoding::RuntimeEncoding::IsCodePageVariableWidth(CodePage::CodePageType 
 	}
 }
 
+std::size_t
+Cafe::Encoding::RuntimeEncoding::GetCodePageMaxWidth(CodePage::CodePageType codePage) noexcept
+{
+	switch (codePage)
+	{
+#define CAFE_CODEPAGE(codePageValue)                                                               \
+	case codePageValue:                                                                              \
+		return CodePage::GetMaxWidth<codePageValue>();
+#include <Cafe/Encoding/Config/IncludedEncoding.h>
+	default:
+		return {};
+	}
+}
+
 #ifdef _WIN32
 Cafe::Encoding::CodePage::CodePageType Cafe::Encoding::RuntimeEncoding::GetAnsiEncoding() noexcept
 {

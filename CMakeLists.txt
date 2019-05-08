@@ -20,6 +20,6 @@ if (CAFE_ENCODING_INCLUDE_RUNTIME_ENCODING)
     add_subdirectory(RuntimeEncoding)
 endif()
 
-if (CAFE_ENCODING_INCLUDE_ENCODING_TEST)
+if (CAFE_INCLUDE_TESTS AND CAFE_ENCODING_INCLUDE_ENCODING_TEST)
     add_subdirectory(Test)
 endif()

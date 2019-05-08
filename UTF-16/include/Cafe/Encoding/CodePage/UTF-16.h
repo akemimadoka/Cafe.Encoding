@@ -64,6 +64,7 @@ namespace Cafe::Encoding
 			public:
 				using CharType = char16_t;
 				static constexpr bool IsVariableWidth = true;
+				static constexpr std::size_t MaxWidth = 2;
 
 				[[nodiscard]] static constexpr std::ptrdiff_t GetWidth(CharType value) noexcept
 				{

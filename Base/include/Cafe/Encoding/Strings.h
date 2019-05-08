@@ -256,9 +256,8 @@ namespace Cafe::Encoding
 			template <std::ptrdiff_t Extent>
 			constexpr void UncheckedAppend(gsl::span<const CharType, Extent> const& src)
 			{
-				auto srcSize = src.size();
-				const auto isSrcNullTerminated = src[srcSize - 1] == CharType{};
-				srcSize -= isSrcNullTerminated;
+				const auto isSrcNullTerminated = src[src.size() - 1] == CharType{};
+				const auto srcSize = src.size() - isSrcNullTerminated;
 				const auto newSize = m_Size + srcSize;
 				std::copy_n(src.data(), srcSize, GetStorage() + m_Size);
 				GetStorage()[newSize] = CharType{};
@@ -333,6 +332,49 @@ namespace Cafe::Encoding
 			{
 				Clear();
 				Append(value, count);
+			}
+
+			template <std::ptrdiff_t Extent>
+			constexpr CharType* UncheckedInsert(const CharType* pos,
+			                                    gsl::span<const CharType, Extent> const& src)
+			{
+				const auto isSrcNullTerminated = src[src.size() - 1] == CharType{};
+				const auto srcSize = src.size() - isSrcNullTerminated;
+				const auto newSize = m_Size + srcSize;
+
+				const auto begin = GetStorage();
+				const auto end = begin + m_Size;
+				const auto moveDest = end + srcSize;
+
+				const auto mutablePos = begin + (pos - begin);
+
+				std::move_backward(mutablePos, end, moveDest);
+				std::copy_n(src.data(), srcSize, mutablePos);
+				begin[newSize] = CharType{};
+				m_Size = newSize;
+
+				return begin + newSize;
+			}
+
+			template <std::ptrdiff_t Extent>
+			constexpr CharType* Insert(const CharType* pos, gsl::span<const CharType, Extent> const& src)
+			{
+				assert(GetStorage() <= pos && pos - GetStorage() <= m_Size);
+				if (pos == GetStorage() + m_Size)
+				{
+					Append(src);
+					return GetStorage() + m_Size;
+				}
+
+				const auto srcSize = src.size();
+				const auto isSrcNullTerminated = src[srcSize - 1] == CharType{};
+				const auto newCapacity = m_Size + srcSize + !isSrcNullTerminated;
+				if (newCapacity > m_Capacity)
+				{
+					Reserve(GrowPolicy::Grow(m_Capacity, newCapacity));
+				}
+
+				return UncheckedInsert(pos, src);
 			}
 
 			constexpr void ShrinkToFit()
@@ -834,6 +876,8 @@ namespace Cafe::Encoding
 	template <typename T>
 	constexpr bool IsStringView = IsStringViewTrait<T>::value;
 
+	/// @brief  静态分配的字符串
+	/// @remark 保证 0 结尾
 	template <CodePage::CodePageType CodePageValue, std::size_t MaxSize>
 	class StaticString
 	{
@@ -858,13 +902,14 @@ namespace Cafe::Encoding
 		using reference = value_type&;
 		using const_reference = value_type const&;
 
-		constexpr StaticString() noexcept : m_Size{}
+		constexpr StaticString() noexcept : m_Size{}, m_Storage{}
 		{
 		}
 
 		constexpr StaticString(CharType ch, std::size_t count = 1) noexcept : m_Size{ count }
 		{
 			std::fill_n(m_Storage.data(), count, ch);
+			m_Storage[count] = CharType{};
 		}
 
 		template <std::ptrdiff_t Extent,
@@ -876,7 +921,7 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr StringView<CodePageValue> GetView() const noexcept
 		{
-			return gsl::make_span(m_Storage.data(), m_Size);
+			return gsl::make_span(m_Storage.data(), GetSize());
 		}
 
 		template <std::ptrdiff_t Extent,
@@ -885,7 +930,7 @@ namespace Cafe::Encoding
 		{
 			if constexpr (Extent == gsl::dynamic_extent)
 			{
-				m_Size = std::min(str.GetSize(), MaxSize);
+				m_Size = std::min(str.GetSize() - str.IsNullTerminated(), MaxSize);
 			}
 			else
 			{
@@ -893,6 +938,7 @@ namespace Cafe::Encoding
 			}
 
 			std::copy_n(str.GetData(), m_Size, m_Storage.data());
+			m_Storage[m_Size] = CharType{};
 		}
 
 		[[nodiscard]] constexpr reference operator[](std::size_t i) noexcept
@@ -917,12 +963,12 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr gsl::span<CharType> GetSpan() noexcept
 		{
-			return { m_Storage.data(), m_Size };
+			return { m_Storage.data(), GetSize() };
 		}
 
 		[[nodiscard]] constexpr gsl::span<const CharType> GetSpan() const noexcept
 		{
-			return { m_Storage.data(), m_Size };
+			return { m_Storage.data(), GetSize() };
 		}
 
 		[[nodiscard]] constexpr iterator begin() noexcept
@@ -932,7 +978,7 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr iterator end() noexcept
 		{
-			return m_Storage.data() + m_Size;
+			return m_Storage.data() + GetSize();
 		}
 
 		[[nodiscard]] constexpr const_iterator cbegin() const noexcept
@@ -942,7 +988,7 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr const_iterator cend() const noexcept
 		{
-			return m_Storage.data() + m_Size;
+			return m_Storage.data() + GetSize();
 		}
 
 		[[nodiscard]] constexpr const_iterator begin() const noexcept
@@ -953,6 +999,11 @@ namespace Cafe::Encoding
 		[[nodiscard]] constexpr const_iterator end() const noexcept
 		{
 			return cend();
+		}
+
+		constexpr std::size_t GetSize() const noexcept
+		{
+			return m_Size + 1;
 		}
 
 	private:
@@ -1123,6 +1174,18 @@ namespace Cafe::Encoding
 		constexpr void Append(CharType value, size_type count = 1)
 		{
 			m_Storage.Append(value, count);
+		}
+
+		template <std::ptrdiff_t Extent>
+		constexpr iterator Insert(const_iterator pos, gsl::span<const CharType, Extent> const& src)
+		{
+			return m_Storage.Insert(pos, src);
+		}
+
+		template <std::ptrdiff_t Extent>
+		constexpr iterator Insert(const_iterator pos, ViewType<Extent> const& src)
+		{
+			return m_Storage.Insert(pos, src.GetSpan());
 		}
 
 		[[nodiscard]] constexpr iterator begin() noexcept
