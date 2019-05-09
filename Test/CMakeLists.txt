@@ -4,11 +4,11 @@ foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
     list(APPEND SOURCE_FILES "${encoding}.Test.cpp")
 endforeach()
 
-if (CAFE_INCLUDE_UNICODE_DATA)
+if (CAFE_ENCODING_INCLUDE_UNICODE_DATA)
     list(APPEND SOURCE_FILES UnicodeData.Test.cpp)
 endif()
 
-if (CAFE_INCLUDE_RUNTIME_ENCODING)
+if (CAFE_ENCODING_INCLUDE_RUNTIME_ENCODING)
     list(APPEND SOURCE_FILES RuntimeEncoding.Test.cpp)
 endif()
 
@@ -22,12 +22,12 @@ foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
         "Cafe.Encoding.${encoding}")
 endforeach()
 
-if (CAFE_INCLUDE_UNICODE_DATA)
+if (CAFE_ENCODING_INCLUDE_UNICODE_DATA)
     target_link_libraries(Cafe.Encoding.Test PRIVATE
         Cafe.Encoding.UnicodeData)
 endif()
 
-if (CAFE_INCLUDE_RUNTIME_ENCODING)
+if (CAFE_ENCODING_INCLUDE_RUNTIME_ENCODING)
     target_link_libraries(Cafe.Encoding.Test PRIVATE
         Cafe.Encoding.RuntimeEncoding)
 endif()

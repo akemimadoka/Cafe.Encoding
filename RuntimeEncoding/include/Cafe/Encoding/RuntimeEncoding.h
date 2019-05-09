@@ -67,7 +67,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					}
 					else
 					{
-						const auto size = src.size() / sizeof(FromCharType);
+						auto size = src.size() / sizeof(FromCharType);
 						if constexpr (IsEncodeOne && FromCodePageTrait::IsVariableWidth)
 						{
 							const auto testWidth = FromCodePageTrait::GetWidth(src[0]);
@@ -77,7 +77,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 							}
 						}
 						mayBeDynamicAllocatedBuffer = std::make_unique<FromCharType[]>(size);
-						std::memcpy(mayBeDynamicAllocatedBuffer.get(), src.data(), size);
+						std::memcpy(mayBeDynamicAllocatedBuffer.get(), src.data(), src.size());
 						return gsl::make_span(&std::as_const(*mayBeDynamicAllocatedBuffer.get()), size);
 					}
 				}
