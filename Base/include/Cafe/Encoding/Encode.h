@@ -6,13 +6,15 @@
 
 namespace Cafe::Encoding
 {
+	/// @brief  编码结果代码
 	enum class EncodingResultCode
 	{
-		Accept,
-		Incomplete,
-		Reject
+		Accept,     ///< @brief 编码成功
+		Incomplete, ///< @brief 不完整
+		Reject      ///< @brief 编码失败，不可构成码点
 	};
 
+	/// @brief  编码结果，具体实现根据特化不同，部分约定可查看通用特化版本
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue,
 	          EncodingResultCode Result>
 	struct EncodingResult;
@@ -43,11 +45,11 @@ namespace Cafe::Encoding
 		}
 	} // namespace Detail
 
-	// Result 字段是编码的结果，若是变长编码其类型为
-	// span<编码单元>，否则为单独的编码单元 对于变长代码页会自动增加 AdvanceCount
-	// 字段，指定获取 Result 所消耗的源代码页编码单元数量
-	// 对于所有特化，应允许不同来源代码页的 EncodingResult
-	// 相互转换，以便扩展传递额外信息
+	/// @brief  编码成功的通用版本
+	/// @remark 对于变长代码页会自动增加 AdvanceCount
+	///         字段，指定获取 Result 所消耗的源代码页编码单元数量
+	///         对于所有特化，应允许不同来源代码页的 EncodingResult
+	///         相互转换，以便扩展传递额外信息
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>
 	    : Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
@@ -75,12 +77,15 @@ namespace Cafe::Encoding
 		{
 		}
 
+		/// @brief  编码的结果
+		/// @remark 若是变长编码其类型为 span<编码单元>，否则为单独的编码单元
 		ResultType Result;
 	};
 
-	// 仅变长代码页会出现的情况
-	// 对于所有特化，应允许默认构造，允许不同来源和结果代码页的 EncodingResult
-	// 相互转换，以便扩展传递额外信息
+	/// @brief  编码不完整的通用版本
+	/// @remark 仅变长代码页会出现的情况
+	///         对于所有特化，应允许默认构造，允许不同来源和结果代码页的 EncodingResult
+	///         相互转换，以便扩展传递额外信息
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Incomplete>
 	{
@@ -99,16 +104,18 @@ namespace Cafe::Encoding
 		{
 		}
 
-		// 指示要获得完整的编码需至少对输入序列进行偏移的个数，若无法提供此信息则为
-		// 0
+		/// @brief  指示要获得完整的编码需至少对输入序列进行偏移的个数
+		/// @remark 若无法提供此信息则为 0
 		std::ptrdiff_t OffsetHint;
-		// 指示至少可能缺失的源编码单元数量，若无法提供此信息则为 0
+		/// @brief  指示至少可能缺失的源编码单元数量
+		///         若无法提供此信息则为 0
 		std::size_t LackHint;
 	};
 
-	// 对于特殊的编码可能有描述原因的字段
-	// 对于所有特化，应允许默认构造，允许不同来源和结果代码页的 EncodingResult
-	// 相互转换，以便扩展传递额外信息
+	/// @brief  编码失败的通用版本
+	/// @remark 对于特殊的编码可能有描述原因的字段
+	///         对于所有特化，应允许默认构造，允许不同来源和结果代码页的 EncodingResult
+	///         相互转换，以便扩展传递额外信息
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Reject>
 	{
@@ -122,6 +129,7 @@ namespace Cafe::Encoding
 		}
 	};
 
+	/// @brief  用于快速获取编码结果的共有信息的工具模板
 	template <typename ResultType>
 	struct GetEncodingResultInfoTrait;
 
@@ -134,18 +142,23 @@ namespace Cafe::Encoding
 		static constexpr CodePage::CodePageType ToCodePage = ToCodePageValue;
 	};
 
+	/// @brief  用于快速获取编码结果的来源代码页的工具模板
 	template <typename ResultType>
 	constexpr CodePage::CodePageType GetFromCodePage = GetEncodingResultInfoTrait<
 	    std::remove_cv_t<std::remove_reference_t<ResultType>>>::FromCodePage;
 
+	/// @brief  用于快速获取编码结果的目标代码页的工具模板
 	template <typename ResultType>
 	constexpr CodePage::CodePageType GetToCodePage =
 	    GetEncodingResultInfoTrait<std::remove_cv_t<std::remove_reference_t<ResultType>>>::ToCodePage;
 
+	/// @brief  用于快速获取编码结果的结果代码的工具模板
 	template <typename ResultType>
 	constexpr EncodingResultCode GetEncodingResultCode =
 	    GetEncodingResultInfoTrait<std::remove_cv_t<std::remove_reference_t<ResultType>>>::value;
 
+	/// @brief  编码器基类
+	/// @see    Cafe::Encoding::Encoder
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncoderBase
 	{
@@ -258,7 +271,7 @@ namespace Cafe::Encoding
 
 	/// @brief  编码器
 	/// @remark 使用类模板是为了允许可能的特化优化版本，继承是为了允许只重写 EncodeOne
-	/// 版本，也允许全部重写以获得最佳性能
+	///         版本，也允许全部重写以获得最佳性能
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct Encoder : EncoderBase<FromCodePageValue, ToCodePageValue>
 	{
@@ -294,6 +307,7 @@ namespace Cafe::Encoding
 		return { resultCode, count };
 	}
 
+	/// @brief  表示码点的信息
 	template <>
 	struct CodePage::CodePageTrait<CodePage::CodePoint>
 	{

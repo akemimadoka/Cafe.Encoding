@@ -15,6 +15,7 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 	{
 		const auto str = CAFE_UTF8_SV("ababc");
 		REQUIRE(str.GetSize() == 6);
+		REQUIRE(str == str);
 		const auto pattern = CAFE_UTF8_SV("ab");
 		REQUIRE(pattern.GetSize() == 3);
 
@@ -22,12 +23,17 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 		REQUIRE(foundPos == 0);
 
 		auto str2 = str.ToString();
-		REQUIRE(str2.GetView() == str);
+		REQUIRE(str2 == str);
+		REQUIRE(str == str2);
+		REQUIRE(str2 == str2);
 		str2.Append(pattern);
-		REQUIRE(str2.GetView() == CAFE_UTF8_SV("ababcab"));
+		REQUIRE(str2 == CAFE_UTF8_SV("ababcab"));
 
 		str2.Insert(str2.begin() + 1, CAFE_UTF8_SV("123"));
-		REQUIRE(str2.GetView() == CAFE_UTF8_SV("a123babcab"));
+		REQUIRE(str2 == CAFE_UTF8_SV("a123babcab"));
+
+		str2.Remove(str2.begin() + 2, 3);
+		REQUIRE(str2 == CAFE_UTF8_SV("a1abcab"));
 	}
 }
 #endif

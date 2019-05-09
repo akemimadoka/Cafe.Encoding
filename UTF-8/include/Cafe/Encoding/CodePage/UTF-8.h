@@ -19,23 +19,24 @@ namespace Cafe::Encoding
 		{
 			static constexpr const char Name[] = "UTF-8";
 
-			// 表示一个编码单元的类型，为了好看名称仍用 CharType，但 CharType 不表示字符
+			/// @brief  表示一个编码单元的类型，为了好看名称仍用 CharType，但 CharType 不表示字符
 #if __cpp_char8_t >= 201811L
 			using CharType = char8_t;
 #else
 			using CharType = char;
 #endif
 
-			// 编码是否是变长的
+			/// @brief  编码是否是变长的
 			static constexpr bool IsVariableWidth = true;
 
-			// 能完整组成一个码点表示的最大编码单元个数，定长编码无此字段
+			/// @brief  能完整组成一个码点表示的最大编码单元个数，定长编码无此字段
 			static constexpr std::size_t MaxWidth = 4;
 
-			// 定长编码无此方法
-			// 0 表示错误，负数的绝对值表示若需确定至少需要前移并重新测试的个数
-			// 在特殊情况下 GetWidth 可能无法获得长度，这不意味着 ToCodePoint 必然也失败
-			// 请查阅对应的特化版本的文档以决定是否考虑此类情况，UTF-8 不会存在此情况
+			/// @brief  获得指定编码单元组成的码点的对应宽度
+			/// @remark 定长编码无此方法
+			///         0 表示错误，负数的绝对值表示若需确定至少需要前移并重新测试的个数
+			///         在特殊情况下 GetWidth 可能无法获得长度，这不意味着 ToCodePoint 必然也失败
+			///         请查阅对应的特化版本的文档以决定是否考虑此类情况，UTF-8 不会存在此情况
 			[[nodiscard]] static constexpr std::ptrdiff_t GetWidth(CharType value) noexcept
 			{
 				const auto codeValue = static_cast<std::make_unsigned_t<CharType>>(value);
@@ -75,7 +76,12 @@ namespace Cafe::Encoding
 				return 0;
 			}
 
-			// 若是变长编码则接受 span，否则是单个编码单元
+			/// @brief  由编码单元转换为码点
+			/// @param  span        编码单元
+			/// @param  receiver    结果的接收器
+			/// @remark 若是变长编码则接受 span，否则是单个编码单元
+			///         receiver 应可接受 EncodingResult 中 FromCodePage 是当前代码页，
+			///         ToCodePage 是 CodePoint，所有结果代码的实例
 			template <std::ptrdiff_t Extent, typename OutputReceiver>
 			static constexpr void ToCodePoint(gsl::span<const CharType, Extent> const& span,
 			                                  OutputReceiver&& receiver)
@@ -173,6 +179,9 @@ namespace Cafe::Encoding
 				}
 			}
 
+			/// @brief  从码点转换为编码单元
+			/// @remark receiver 应可接受 EncodingResult 中 FromCodePage 是 CodePoint，
+			///         ToCodePage 是当前代码页，所有结果代码的实例
 			template <typename OutputReceiver>
 			static constexpr void FromCodePoint(CodePointType codePoint, OutputReceiver&& receiver)
 			{

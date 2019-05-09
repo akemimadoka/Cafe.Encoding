@@ -1,8 +1,15 @@
 #include <Cafe/Encoding/RuntimeEncoding.h>
+#include <Cafe/Misc/Utility.h>
 
 #ifdef _WIN32
 #	include <Winnls.h>
 #endif
+
+gsl::span<const Cafe::Encoding::CodePage::CodePageType>
+Cafe::Encoding::RuntimeEncoding::GetSupportCodePages() noexcept
+{
+	return gsl::make_span(Cafe::Core::Misc::SequenceToArray<AllIncludedCodePages>::Array);
+}
 
 std::string_view
 Cafe::Encoding::RuntimeEncoding::GetCodePageName(CodePage::CodePageType codePage) noexcept
