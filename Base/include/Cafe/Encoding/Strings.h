@@ -969,6 +969,8 @@ namespace Cafe::Encoding
 
 			std::copy_n(str.GetData(), m_Size, m_Storage.data());
 			m_Storage[m_Size] = CharType{};
+
+			return *this;
 		}
 
 		[[nodiscard]] constexpr reference operator[](std::size_t i) noexcept
@@ -998,7 +1000,7 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr gsl::span<const CharType> GetSpan() const noexcept
 		{
-			return { m_Storage.data(), GetSize() };
+			return { m_Storage.data(), static_cast<std::ptrdiff_t>(GetSize()) };
 		}
 
 		[[nodiscard]] constexpr iterator begin() noexcept
