@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CAFE_ENCODING_CODEPAGE_H
+#define CAFE_ENCODING_CODEPAGE_H
 
 #include <cstddef>
 #include <cstdint>
@@ -46,3 +47,9 @@ namespace Cafe::Encoding
 	/// @brief  最大码点的值
 	constexpr CodePointType MaxValidCodePoint = 0x10FFFF;
 } // namespace Cafe::Encoding
+
+#endif
+
+#ifdef CAFE_CODEPAGE
+CAFE_CODEPAGE(::Cafe::Encoding::CodePage::CodePoint)
+#endif

@@ -157,6 +157,6 @@ namespace Cafe::Encoding
 #endif
 
 #ifdef CAFE_CODEPAGE
-CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf32LittleEndian)
-CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf32BigEndian)
+CAFE_CODEPAGE(::Cafe::Encoding::CodePage::Utf32LittleEndian)
+CAFE_CODEPAGE(::Cafe::Encoding::CodePage::Utf32BigEndian)
 #endif

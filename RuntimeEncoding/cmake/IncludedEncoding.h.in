@@ -1,3 +1,4 @@
+#include <Cafe/Encoding/CodePage.h>
 ${EncodingList}
 
 #undef CAFE_CODEPAGE

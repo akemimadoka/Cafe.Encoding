@@ -295,5 +295,5 @@ namespace Cafe::Encoding
 #endif
 
 #ifdef CAFE_CODEPAGE
-CAFE_CODEPAGE(Cafe::Encoding::CodePage::Utf8)
+CAFE_CODEPAGE(::Cafe::Encoding::CodePage::Utf8)
 #endif
