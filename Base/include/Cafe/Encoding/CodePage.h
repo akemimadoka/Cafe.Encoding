@@ -10,7 +10,7 @@ namespace Cafe::Encoding
 	namespace CodePage
 	{
 		/// @brief  代码页类型
-		/// @remark 代码页在本库中与编码等价，故文档中的“编码”皆指代码页
+		/// @remark 文档中的“编码”皆指代码页，但存在多个代码页对应一个编码的不同表示
 		enum class CodePageType : std::uint16_t
 		{
 		};

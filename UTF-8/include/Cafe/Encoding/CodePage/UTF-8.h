@@ -10,10 +10,6 @@ namespace Cafe::Encoding
 	{
 		constexpr CodePageType Utf8 = static_cast<CodePageType>(65001);
 
-#if defined(__linux__)
-		constexpr CodePageType NarrowCharCodePage = Utf8;
-#endif
-
 		template <>
 		struct CodePageTrait<CodePage::Utf8>
 		{

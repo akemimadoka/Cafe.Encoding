@@ -6,6 +6,7 @@
 #include <cstring>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 namespace Cafe::Encoding::RuntimeEncoding
 {
@@ -19,19 +20,6 @@ namespace Cafe::Encoding::RuntimeEncoding
 	CAFE_PUBLIC std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
 	CAFE_PUBLIC std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
 	CAFE_PUBLIC std::size_t GetCodePageMaxWidth(CodePage::CodePageType codePage) noexcept;
-
-#ifdef _WIN32
-	CAFE_PUBLIC CodePage::CodePageType GetAnsiEncoding() noexcept;
-	constexpr CodePage::CodePageType GetWideEncoding() noexcept
-	{
-		return CodePage::WideCharCodePage;
-	}
-#else
-	constexpr CodePage::CodePageType GetNarrowCharEncoding() noexcept
-	{
-		return CodePage::NarrowCharCodePage;
-	}
-#endif
 
 	template <typename ResultUnitType>
 	struct RuntimeEncodingResult

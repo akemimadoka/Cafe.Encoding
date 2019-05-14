@@ -608,11 +608,13 @@ namespace Cafe::Encoding
 			return m_Span;
 		}
 
+		/// @brief  若以空字符结尾则返回去除结尾空字符的 span，否则等价于 GetSpan()
 		[[nodiscard]] constexpr gsl::span<const CharType> GetTrimmedSpan() const noexcept
 		{
 			return m_Span.subspan(0, GetSize() - IsNullTerminated());
 		}
 
+		/// @brief  若以空字符结尾则返回去除结尾空字符的字符串视图，否则等价于直接复制自身
 		[[nodiscard]] constexpr StringView<CodePageValue> Trim() const noexcept
 		{
 			return { GetTrimmedSpan() };
@@ -1581,10 +1583,19 @@ namespace std
 	template <Cafe::Encoding::CodePage::CodePageType CodePageValue, std::size_t MaxSize>
 	struct hash<Cafe::Encoding::StaticString<CodePageValue, MaxSize>>
 	{
+		using transparent_key_equal = std::equal_to<>;
+
+		template <std::ptrdiff_t Extent>
+		constexpr std::size_t
+		operator()(Cafe::Encoding::StringView<CodePageValue, Extent> const& value) const noexcept
+		{
+			return hash<Cafe::Encoding::StringView<CodePageValue, Extent>>{}(value);
+		}
+
 		constexpr std::size_t
 		operator()(Cafe::Encoding::StaticString<CodePageValue, MaxSize> const& value) const noexcept
 		{
-			return std::hash<Cafe::Encoding::StringView<CodePageValue>>{}(value.GetView());
+			return operator()(value.GetView());
 		}
 	};
 
@@ -1592,10 +1603,19 @@ namespace std
 	          std::size_t SsoThresholdSize, typename GrowPolicy>
 	struct hash<Cafe::Encoding::String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>>
 	{
+		using transparent_key_equal = std::equal_to<>;
+
+		template <std::ptrdiff_t Extent>
+		constexpr std::size_t
+		operator()(Cafe::Encoding::StringView<CodePageValue, Extent> const& value) const noexcept
+		{
+			return hash<Cafe::Encoding::StringView<CodePageValue, Extent>>{}(value);
+		}
+
 		std::size_t operator()(Cafe::Encoding::String<CodePageValue, Allocator, SsoThresholdSize,
 		                                              GrowPolicy> const& value) const noexcept
 		{
-			return std::hash<Cafe::Encoding::StringView<CodePageValue>>{}(value.GetView());
+			return operator()(value.GetView());
 		}
 	};
 } // namespace std

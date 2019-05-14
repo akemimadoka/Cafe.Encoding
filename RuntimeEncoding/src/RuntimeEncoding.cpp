@@ -1,10 +1,6 @@
 #include <Cafe/Encoding/RuntimeEncoding.h>
 #include <Cafe/Misc/Utility.h>
 
-#ifdef _WIN32
-#	include <Winnls.h>
-#endif
-
 gsl::span<const Cafe::Encoding::CodePage::CodePageType>
 Cafe::Encoding::RuntimeEncoding::GetSupportCodePages() noexcept
 {
@@ -52,10 +48,3 @@ Cafe::Encoding::RuntimeEncoding::GetCodePageMaxWidth(CodePage::CodePageType code
 		return {};
 	}
 }
-
-#ifdef _WIN32
-Cafe::Encoding::CodePage::CodePageType Cafe::Encoding::RuntimeEncoding::GetAnsiEncoding() noexcept
-{
-	return static_cast<CodePage::CodePageType>(GetACP());
-}
-#endif
