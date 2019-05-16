@@ -7,8 +7,6 @@ target_include_directories(Cafe.Encoding.Base INTERFACE
 target_link_libraries(Cafe.Encoding.Base INTERFACE
     Cafe.Core CONAN_PKG::gsl_microsoft)
 
-target_compile_features(Cafe.Encoding.Base INTERFACE cxx_std_20)
-
 install(TARGETS Cafe.Encoding.Base
     EXPORT Encoding.Base)
 
