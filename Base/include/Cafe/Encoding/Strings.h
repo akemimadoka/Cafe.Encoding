@@ -1520,40 +1520,29 @@ namespace Cafe::Encoding
 	}
 
 #if __cpp_nontype_template_parameter_class >= 201806L
-	namespace Detail
-	{
-		template <CodePage::CodePageType ToCodePageValue, CodePage::CodePageType FromCodePageValue,
-		          StringView<FromCodePageValue> str>
-		constexpr auto StaticEncodeImpl() noexcept
-		{
-			StaticString<ToCodePageValue,
-			             CountEncodeSize<FromCodePageValue, ToCodePageValue>(str.GetSpan())>
-			    result{};
-			auto iter = result.GetData();
-			Encoder<FromCodePageValue, ToCodePageValue>::EncodeAll(span, [&](auto const& result) {
-				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
-				{
-					if constexpr (CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth)
-					{
-						for (const auto item : result.Result)
-						{
-							*iter++ = item;
-						}
-					}
-					else
-					{
-						*iter++ = result.Result;
-					}
-				}
-			});
-			return result;
-		}
-	} // namespace Detail
-
-	template <CodePage::CodePageType ToCodePageValue, auto str>
+	template <CodePage::CodePageType ToCodePage, auto Str>
 	constexpr auto StaticEncode() noexcept
 	{
-		return Detail::StaticEncodeImpl<ToCodePageValue, decltype(str)::UsingCodePage, str>();
+		constexpr auto FromCodePage = decltype(Str)::UsingCodePage;
+		StaticString<ToCodePage, CountEncodeSize<FromCodePage, ToCodePage>(Str.GetSpan())> result{};
+		auto iter = result.GetData();
+		Encoder<FromCodePage, ToCodePage>::EncodeAll(Str.GetSpan(), [&](auto const& result) {
+			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			{
+				if constexpr (CodePage::CodePageTrait<ToCodePage>::IsVariableWidth)
+				{
+					for (const auto item : result.Result)
+					{
+						*iter++ = item;
+					}
+				}
+				else
+				{
+					*iter++ = result.Result;
+				}
+			}
+		});
+		return result;
 	}
 #endif
 

@@ -243,6 +243,8 @@ namespace Cafe::Encoding
 			else
 			{
 				// TODO: 针对运行期优化，使用 SIMD
+				return EncoderBase<CodePage::Utf8, ToCodePageValue>::EncodeAll(
+				    span, std::forward<OutputReceiver>(receiver));
 			}
 		}
 	};
