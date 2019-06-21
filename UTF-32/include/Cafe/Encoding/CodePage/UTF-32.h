@@ -13,30 +13,15 @@ namespace Cafe::Encoding
 
 		namespace Detail
 		{
-			struct Utf32CommonPartBase
-			{
-				static constexpr bool IsLittleEndian = []() constexpr
-				{
-#ifdef _MSC_VER
-					return true;
-#elif __cplusplus > 201709L
-					static_assert(std::endian::native == std::endian::little ||
-					              std::endian::native == std::endian::big);
-					return std::endian::native == std::endian::little;
-#else
-					static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ||
-					              __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__);
-					return __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__;
-#endif
-				}
-				();
-			};
+			static_assert(std::endian::native == std::endian::little ||
+			              std::endian::native == std::endian::big);
 
 			template <CodePageType Utf32>
-			struct Utf32CommonPart : Utf32CommonPartBase
+			struct Utf32CommonPart
 			{
 			private:
-				static constexpr bool NeedSwapEndian = (Utf32 == Utf32BigEndian) == IsLittleEndian;
+				static constexpr bool NeedSwapEndian =
+				    (Utf32 == Utf32BigEndian) == (std::endian::native == std::endian::little);
 
 				/// @remark 假设了平台并非是混合端序的
 				[[nodiscard]] static constexpr char32_t MaySwapEndian(char32_t value) noexcept
@@ -126,11 +111,10 @@ namespace Cafe::Encoding
 			return String<CodePage::Utf32BigEndian>{ gsl::make_span(str, size) };
 		}
 
-		constexpr StringView<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
-		                         ? CodePage::Utf32LittleEndian
-		                         : CodePage::Utf32BigEndian>
+		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf32LittleEndian
+		                                                                : CodePage::Utf32BigEndian>
 		operator""_sv(
-		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		    const typename CodePage::CodePageTrait<std::endian::native == std::endian::little
 		                                               ? CodePage::Utf32LittleEndian
 		                                               : CodePage::Utf32BigEndian>::CharType* str,
 		    std::size_t size) noexcept
@@ -138,16 +122,15 @@ namespace Cafe::Encoding
 			return gsl::make_span(str, size);
 		}
 
-		inline String<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
-		                  ? CodePage::Utf32LittleEndian
-		                  : CodePage::Utf32BigEndian>
+		inline String<std::endian::native == std::endian::little ? CodePage::Utf32LittleEndian
+		                                                         : CodePage::Utf32BigEndian>
 		operator""_s(
-		    const typename CodePage::CodePageTrait<CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+		    const typename CodePage::CodePageTrait<std::endian::native == std::endian::little
 		                                               ? CodePage::Utf32LittleEndian
 		                                               : CodePage::Utf32BigEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return String < CodePage::Detail::Utf32CommonPartBase::IsLittleEndian
+			return String < std::endian::native == std::endian::little
 			           ? CodePage::Utf32LittleEndian
 			           : CodePage::Utf32BigEndian > { gsl::make_span(str, size) };
 		}
