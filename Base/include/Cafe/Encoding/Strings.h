@@ -248,7 +248,12 @@ namespace Cafe::Encoding
 				}
 
 				Reserve(newSize);
-				std::fill(GetStorage() + m_Size, GetStorage() + newSize, value);
+				if (newSize > m_Size)
+				{
+					std::fill(GetStorage() + m_Size, GetStorage() + newSize, value);
+				}
+
+				GetStorage()[newSize] = CharType{};
 				m_Size = newSize;
 			}
 
@@ -1323,6 +1328,9 @@ namespace Cafe::Encoding
 			m_Storage.Reserve(newCapacity);
 		}
 
+		/// @brief  修改字符串长度
+		/// @remark 若长度超过原长度，将使用 value 填充，否则将会截断
+		///         新长度包含结尾空字符
 		constexpr void Resize(size_type newSize, CharType value = CharType{})
 		{
 			m_Storage.Resize(newSize, value);
