@@ -37,6 +37,12 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 		str2.Remove(str2.begin() + 2, 3);
 		REQUIRE(str2 == CAFE_UTF8_SV("a1abcab"));
 
+		str2.Resize(4);
+		REQUIRE(str2 == CAFE_UTF8_SV("a1a"));
+		
+		str2.Resize(6);
+		REQUIRE(str2 == CAFE_UTF8_SV("a1a\0\0"));
+
 		{
 			std::unordered_map<StringView<CodePage::Utf8>, String<CodePage::Utf8>> map;
 			map.emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("def"));

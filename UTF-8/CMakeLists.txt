@@ -14,5 +14,4 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.h")
 
 install(EXPORT Encoding.UTF-8
-    NAMESPACE Cafe
     DESTINATION cmake/Encoding.UTF-8)

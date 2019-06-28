@@ -241,13 +241,14 @@ namespace Cafe::Encoding
 
 			constexpr void Resize(std::size_t newSize, CharType value = CharType{})
 			{
-				if (newSize <= m_Capacity)
+				assert(newSize > 0);
+				--newSize; // 去除结尾空字符
+
+				if (newSize > m_Capacity)
 				{
-					m_Size = newSize;
-					return;
+					Reserve(newSize);
 				}
 
-				Reserve(newSize);
 				if (newSize > m_Size)
 				{
 					std::fill(GetStorage() + m_Size, GetStorage() + newSize, value);
