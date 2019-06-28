@@ -250,20 +250,23 @@ namespace Cafe::Encoding
 	};
 #endif
 
-	namespace StringLiterals
+	inline namespace StringLiterals
 	{
+		// 字符串自定义字面量的 size 参数不包含结尾的空字符
+		// TODO: 考虑使用模板以推断长度信息
+
 #if __cpp_char8_t >= 201811L
 		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
 
 		constexpr StringView<CodePage::Utf8> operator""_sv(const char8_t* str,
 		                                                   std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size);
+			return gsl::make_span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
 		{
-			return String<CodePage::Utf8>{ gsl::make_span(str, size) };
+			return String<CodePage::Utf8>{ gsl::make_span(str, size + 1) };
 		}
 #endif
 
@@ -271,13 +274,13 @@ namespace Cafe::Encoding
 		operator""_u8sv(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
 		                std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size);
+			return gsl::make_span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf8>
 		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
 		{
-			return String<CodePage::Utf8>{ gsl::make_span(str, size) };
+			return String<CodePage::Utf8>{ gsl::make_span(str, size + 1) };
 		}
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding

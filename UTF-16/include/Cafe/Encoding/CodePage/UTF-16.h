@@ -162,34 +162,34 @@ namespace Cafe::Encoding
 		};
 	} // namespace CodePage
 
-	namespace StringLiterals
+	inline namespace StringLiterals
 	{
 		constexpr StringView<CodePage::Utf16LittleEndian> operator""_lesv(
 		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size);
+			return gsl::make_span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf16LittleEndian> operator""_les(
 		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return String<CodePage::Utf16LittleEndian>{ gsl::make_span(str, size) };
+			return String<CodePage::Utf16LittleEndian>{ gsl::make_span(str, size + 1) };
 		}
 
 		constexpr StringView<CodePage::Utf16BigEndian>
 		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
 		                std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size);
+			return gsl::make_span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf16BigEndian>
 		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
 		               std::size_t size) noexcept
 		{
-			return String<CodePage::Utf16BigEndian>{ gsl::make_span(str, size) };
+			return String<CodePage::Utf16BigEndian>{ gsl::make_span(str, size + 1) };
 		}
 
 		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
@@ -200,7 +200,7 @@ namespace Cafe::Encoding
 		                                               : CodePage::Utf16BigEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size);
+			return gsl::make_span(str, size + 1);
 		}
 
 		inline String<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
@@ -213,7 +213,7 @@ namespace Cafe::Encoding
 		{
 			return String < std::endian::native == std::endian::little
 			           ? CodePage::Utf16LittleEndian
-			           : CodePage::Utf16BigEndian > { gsl::make_span(str, size) };
+			           : CodePage::Utf16BigEndian > { gsl::make_span(str, size + 1) };
 		}
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding
