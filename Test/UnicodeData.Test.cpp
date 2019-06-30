@@ -14,7 +14,7 @@ TEST_CASE("Cafe.Encoding.UnicodeData", "[Encoding][UnicodeData]")
 		for (CodePointType codePoint = 0; codePoint < 50; ++codePoint)
 		{
 			const auto name = RuntimeUnicodeData::GetCharacterName(codePoint);
-			std::cout << name.GetData() << std::endl;
+			std::cout << reinterpret_cast<const char*>(name.GetData()) << std::endl;
 		}
 	}
 }
