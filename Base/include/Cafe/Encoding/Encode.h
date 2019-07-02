@@ -311,6 +311,8 @@ namespace Cafe::Encoding
 	template <>
 	struct CodePage::CodePageTrait<CodePage::CodePoint>
 	{
+		/// @brief  代码页名称
+		/// @note   使用 ASCII 表示
 		static constexpr const char Name[] = "Code Point";
 
 		using CharType = CodePointType;
