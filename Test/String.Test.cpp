@@ -39,9 +39,28 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 
 		str2.Resize(4);
 		REQUIRE(str2 == CAFE_UTF8_SV("a1a"));
-		
+
 		str2.Resize(6);
 		REQUIRE(str2 == CAFE_UTF8_SV("a1a\0\0"));
+
+		String<CodePage::Utf8,
+		       std::allocator<typename CodePage::CodePageTrait<CodePage::Utf8>::CharType>, 16>
+		    str3 = CAFE_UTF8_SV("abc");
+		REQUIRE(!str3.IsDynamicAllocated());
+
+		str3.Append(CAFE_UTF8_SV("abcabcabcabcabc"));
+		REQUIRE(str3.IsDynamicAllocated());
+
+		REQUIRE(str3 == CAFE_UTF8_SV("abcabcabcabcabcabc"));
+
+		String<CodePage::Utf8,
+		       std::allocator<typename CodePage::CodePageTrait<CodePage::Utf8>::CharType>, 32>
+		    str4 = std::move(str3);
+		REQUIRE(str3.IsEmpty());
+		REQUIRE(str3.IsDynamicAllocated());
+		str3.ShrinkToFit();
+		REQUIRE(!str3.IsDynamicAllocated());
+		REQUIRE(str4 == CAFE_UTF8_SV("abcabcabcabcabcabc"));
 
 		{
 			std::unordered_map<StringView<CodePage::Utf8>, String<CodePage::Utf8>> map;
@@ -69,6 +88,18 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 
 		{
 			std::map<StringView<CodePage::Utf8>, String<CodePage::Utf8>> map;
+			map.emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("def"));
+			map.emplace(CAFE_UTF8_SV("def"), CAFE_UTF8_SV("abc"));
+			const auto [_, succeed] = map.try_emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("ghi"));
+			REQUIRE(!succeed);
+			REQUIRE(map.size() == 2);
+			const auto iter = map.find(CAFE_UTF8_SV("abc"));
+			REQUIRE(iter != map.end());
+			REQUIRE(iter->second == CAFE_UTF8_SV("def"));
+		}
+
+		{
+			std::map<String<CodePage::Utf8>, StringView<CodePage::Utf8>> map;
 			map.emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("def"));
 			map.emplace(CAFE_UTF8_SV("def"), CAFE_UTF8_SV("abc"));
 			const auto [_, succeed] = map.try_emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("ghi"));

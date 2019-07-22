@@ -17,8 +17,6 @@ namespace Cafe::Encoding
 
 			// 结果保证不小于 to
 			[[nodiscard]] static constexpr std::size_t Grow(std::size_t from, std::size_t to)
-			// [[expects: to > from]]
-			// [[ensures result : result >= to]]
 			{
 				const auto newValue = static_cast<std::size_t>(from * GrowFactor);
 				return std::max(newValue, to);
@@ -32,15 +30,21 @@ namespace Cafe::Encoding
 		          typename GrowPolicy = DefaultGrowPolicy>
 		class StringStorage
 		{
+			template <typename CharType_, typename Allocator_, std::size_t SsoThresholdSize_,
+			          typename GrowPolicy_>
+			friend class StringStorage;
+
 		public:
 			constexpr StringStorage() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
 			    : m_Allocator{}, m_Size{}, m_Capacity{ SsoThresholdSize }
 			{
+				m_SsoStorage[0] = CharType{};
 			}
 
 			constexpr explicit StringStorage(Allocator const& allocator) noexcept
 			    : m_Allocator{ allocator }, m_Size{}, m_Capacity{ SsoThresholdSize }
 			{
+				m_SsoStorage[0] = CharType{};
 			}
 
 			template <std::ptrdiff_t Extent>
@@ -85,6 +89,7 @@ namespace Cafe::Encoding
 
 			// 若 Allocator 类型不同则直接 fallback 到复制，因为无法重用
 			// StringStorage 的存储必定以 0 结尾，因此不需额外检查，直接复制即可
+			// 移动后 other 保证为空存储
 			template <std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
 			constexpr StringStorage(
 			    StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
@@ -98,6 +103,7 @@ namespace Cafe::Encoding
 						m_Size = std::exchange(other.m_Size, 0);
 						m_Capacity = std::exchange(other.m_Capacity, OtherSsoThresholdSize);
 						m_DynamicStorage = other.m_DynamicStorage;
+						other.m_SsoStorage[0] = CharType{};
 						return;
 					}
 				}
@@ -112,6 +118,7 @@ namespace Cafe::Encoding
 							m_Allocator->~Allocator();
 							new (static_cast<void*>(this)) StringStorage(
 							    gsl::make_span(other.GetStorage(), other.GetSize()), other.m_Allocator);
+							other.Clear();
 						}
 						else
 						{
@@ -119,6 +126,7 @@ namespace Cafe::Encoding
 							m_Size = std::exchange(other.m_Size, 0);
 							m_Capacity = std::exchange(other.m_Capacity, OtherSsoThresholdSize);
 							m_DynamicStorage = other.m_DynamicStorage;
+							other.m_SsoStorage[0] = CharType{};
 						}
 
 						return;
@@ -128,6 +136,7 @@ namespace Cafe::Encoding
 				m_Size = other.m_Size;
 				m_Capacity = other.m_Capacity;
 				std::copy_n(other.GetStorage(), m_Size + 1, m_SsoStorage);
+				other.Clear();
 			}
 
 			~StringStorage()
@@ -189,28 +198,24 @@ namespace Cafe::Encoding
 				return *this;
 			}
 
-			/// @brief  获得内容占据的大小，包含结尾的空字符
+			/// @brief  获得内容占据的大小，包含结尾的空编码单元
 			[[nodiscard]] constexpr std::size_t GetSize() const noexcept
-			// [[ensures result : result <= GetCapacity()]]
 			{
 				return m_Size + 1;
 			}
 
-			/// @brief  获得已分配的大小，包含结尾的空字符
+			/// @brief  获得已分配的大小，包含结尾的空编码单元
 			[[nodiscard]] constexpr std::size_t GetCapacity() const noexcept
-			// [[ensures result : result >= SsoThresholdSize]]
 			{
 				return m_Capacity;
 			}
 
 			[[nodiscard]] constexpr CharType* GetStorage() noexcept
-			// [[ensures result : result != nullptr]]
 			{
 				return const_cast<CharType*>(std::as_const(*this).GetStorage());
 			}
 
 			[[nodiscard]] constexpr const CharType* GetStorage() const noexcept
-			// [[ensures result : result != nullptr]]
 			{
 				return IsDynamicAllocated() ? m_DynamicStorage : m_SsoStorage;
 			}
@@ -242,7 +247,7 @@ namespace Cafe::Encoding
 			constexpr void Resize(std::size_t newSize, CharType value = CharType{})
 			{
 				assert(newSize > 0);
-				--newSize; // 去除结尾空字符
+				--newSize; // 去除结尾空编码单元
 
 				if (newSize > m_Capacity)
 				{
@@ -441,6 +446,42 @@ namespace Cafe::Encoding
 				CharType m_SsoStorage[SsoThresholdSize];
 				CharType* m_DynamicStorage;
 			};
+
+			class DynamicStorageDeleter
+			{
+			public:
+				constexpr DynamicStorageDeleter(Allocator const& allocator, std::size_t capacity) noexcept
+				    : m_Allocator{ allocator }, m_Capacity{ capacity }
+				{
+				}
+
+				constexpr void operator()(CharType* storage) const noexcept
+				{
+					std::allocator_traits<Allocator>::deallocate(m_Allocator, storage, m_Capacity);
+				}
+
+			private:
+#if __has_cpp_attribute(no_unique_address)
+				[[no_unique_address]]
+#endif
+				Allocator m_Allocator;
+				std::size_t m_Capacity;
+			};
+
+		public:
+			constexpr std::unique_ptr<CharType[], DynamicStorageDeleter> ReleaseStorage() noexcept
+			{
+				if (IsDynamicAllocated())
+				{
+					m_Size = 0;
+					const auto capacity = std::exchange(m_Capacity, SsoThresholdSize);
+					const auto storage = m_DynamicStorage;
+					return std::unique_ptr<CharType[], DynamicStorageDeleter>(
+					    storage, DynamicStorageDeleter{ m_Allocator, capacity });
+				}
+
+				return {};
+			}
 		};
 
 		template <std::size_t Size>
@@ -614,13 +655,13 @@ namespace Cafe::Encoding
 			return m_Span;
 		}
 
-		/// @brief  若以空字符结尾则返回去除结尾空字符的 span，否则等价于 GetSpan()
+		/// @brief  若以空编码单元结尾则返回去除结尾空编码单元的 span，否则等价于 GetSpan()
 		[[nodiscard]] constexpr gsl::span<const CharType> GetTrimmedSpan() const noexcept
 		{
 			return m_Span.subspan(0, GetSize() - IsNullTerminated());
 		}
 
-		/// @brief  若以空字符结尾则返回去除结尾空字符的字符串视图，否则等价于直接复制自身
+		/// @brief  若以空编码单元结尾则返回去除结尾空编码单元的字符串视图，否则等价于直接复制自身
 		[[nodiscard]] constexpr StringView<CodePageValue> Trim() const noexcept
 		{
 			return { GetTrimmedSpan() };
@@ -1080,6 +1121,10 @@ namespace Cafe::Encoding
 	          typename GrowPolicy>
 	class String
 	{
+		template <CodePage::CodePageType CodePageValue_, typename Allocator_,
+		          std::size_t SsoThresholdSize_, typename GrowPolicy_>
+		friend class String;
+
 	public:
 		static constexpr CodePage::CodePageType UsingCodePage = CodePageValue;
 
@@ -1312,14 +1357,16 @@ namespace Cafe::Encoding
 		}
 
 		/// @brief  提供访问内部内容的操作符
+		/// @note   访问的是编码单元而不是具体的字符，若需要遍历码点请使用
+		/// Cafe::TextUtils::CodePointIterator
 		/// @remark 保证 index 处于 [0, GetSize()) 范围内时结果有效，且 index 为 GetSize() - 1
-		///         时引用的字符必定为空字符，但此时不可写入空字符以外的字符，否则结果未定义
-		[[nodiscard]] constexpr reference operator[](difference_type index) noexcept
+		///         时引用的编码单元必定为空编码单元，但此时不可写入空编码单元以外的编码单元，否则结果未定义
+		[[nodiscard]] constexpr reference operator[](size_type index) noexcept
 		{
 			return m_Storage.GetStorage()[index];
 		}
 
-		[[nodiscard]] constexpr const_reference operator[](difference_type index) const noexcept
+		[[nodiscard]] constexpr const_reference operator[](size_type index) const noexcept
 		{
 			return m_Storage.GetStorage()[index];
 		}
@@ -1331,14 +1378,19 @@ namespace Cafe::Encoding
 
 		/// @brief  修改字符串长度
 		/// @remark 若长度超过原长度，将使用 value 填充，否则将会截断
-		///         新长度包含结尾空字符
+		///         新长度包含结尾空编码单元
 		constexpr void Resize(size_type newSize, CharType value = CharType{})
 		{
 			m_Storage.Resize(newSize, value);
 		}
 
-		/// @brief  获得字符串长度，包含结尾的空字符
-		/// @remark 由于结果必定包含空字符，因此最小值为 1
+		constexpr void ShrinkToFit()
+		{
+			m_Storage.ShrinkToFit();
+		}
+
+		/// @brief  获得字符串长度，包含结尾的空编码单元
+		/// @remark 由于结果必定包含空编码单元，因此最小值为 1
 		[[nodiscard]] constexpr size_type GetSize() const noexcept
 		{
 			return m_Storage.GetSize();
@@ -1354,6 +1406,11 @@ namespace Cafe::Encoding
 			const auto size = GetSize();
 			assert(size > 0);
 			return size == 1;
+		}
+
+		[[nodiscard]] constexpr bool IsDynamicAllocated() const noexcept
+		{
+			return m_Storage.IsDynamicAllocated();
 		}
 
 		[[nodiscard]] constexpr size_type GetCapacity() const noexcept
