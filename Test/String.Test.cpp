@@ -21,8 +21,8 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 		const auto pattern = CAFE_UTF8_SV("ab");
 		REQUIRE(pattern.GetSize() == 3);
 
-		const auto foundPos = str.Find(pattern);
-		REQUIRE(foundPos == 0);
+		REQUIRE(str.Find(pattern) == 0);
+		REQUIRE(str.Find(CAFE_UTF8_SV("c")) == 4);
 
 		auto str2 = str.ToString();
 		REQUIRE(str2 == str);
@@ -42,6 +42,11 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 
 		str2.Resize(6);
 		REQUIRE(str2 == CAFE_UTF8_SV("a1a\0\0"));
+
+		REQUIRE(str + str2 == CAFE_UTF8_SV("ababca1a\0\0"));
+		REQUIRE(str.ToString() + str2 == CAFE_UTF8_SV("ababca1a\0\0"));
+		REQUIRE(u8"123"_u8s + str == CAFE_UTF8_SV("123ababc"));
+		REQUIRE(str2 + str == CAFE_UTF8_SV("a1a\0\0ababc"));
 
 		String<CodePage::Utf8,
 		       std::allocator<typename CodePage::CodePageTrait<CodePage::Utf8>::CharType>, 16>

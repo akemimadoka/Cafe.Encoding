@@ -163,12 +163,20 @@ namespace Cafe::Encoding
 					}
 				}
 
+				if constexpr (std::is_same_v<Allocator, OtherAllocator> &&
+				              std::allocator_traits<
+				                  Allocator>::propagate_on_container_copy_assignment::value)
+				{
+					m_Allocator = other.m_Allocator;
+				}
+
 				Assign(gsl::make_span(other.GetStorage(), other.GetSize()));
 
 				return *this;
 			}
 
 			// 若 Allocator 不同则直接 fallback 到复制，因为无法重用
+			// TODO: 不遵守 std::allocator_traits<Allocator>::propagate_on_container_move_assignment
 			template <std::size_t OtherSsoThresholdSize, typename OtherGrowPolicy>
 			constexpr StringStorage&
 			operator=(StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
@@ -460,6 +468,21 @@ namespace Cafe::Encoding
 					std::allocator_traits<Allocator>::deallocate(m_Allocator, storage, m_Capacity);
 				}
 
+				Allocator& GetAllocator() noexcept
+				{
+					return m_Allocator;
+				}
+
+				Allocator const& GetAllocator() const noexcept
+				{
+					return m_Allocator;
+				}
+
+				std::size_t GetCapacity() const noexcept
+				{
+					return m_Capacity;
+				}
+
 			private:
 #if __has_cpp_attribute(no_unique_address)
 				[[no_unique_address]]
@@ -476,6 +499,7 @@ namespace Cafe::Encoding
 					m_Size = 0;
 					const auto capacity = std::exchange(m_Capacity, SsoThresholdSize);
 					const auto storage = m_DynamicStorage;
+					m_SsoStorage[0] = CharType{};
 					return std::unique_ptr<CharType[], DynamicStorageDeleter>(
 					    storage, DynamicStorageDeleter{ m_Allocator, capacity });
 				}
@@ -811,13 +835,19 @@ namespace Cafe::Encoding
 		                                  Core::Misc::UnsignedMinTypeToHold<OtherExtent>>,
 		               OtherExtent> const& findingCache) const noexcept
 		{
+			using FindingCacheElemType =
+			    std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
+			                       Core::Misc::UnsignedMinTypeToHold<OtherExtent>>;
+			constexpr auto FindingCacheNpos = static_cast<FindingCacheElemType>(-1);
+
 			const auto size = m_Span.size();
 			const auto patternSize = pattern.GetSize() - pattern.IsNullTerminated();
 
-			std::size_t i = 0, j = 0;
-			for (; i < size && j < patternSize;)
+			std::size_t i = 0;
+			FindingCacheElemType j = 0;
+			for (; i < size && static_cast<FindingCacheElemType>(j + 1) <= patternSize;)
 			{
-				if (j == Npos || m_Span[i] == pattern.GetData()[j])
+				if (j == FindingCacheNpos || m_Span[i] == pattern.GetData()[j])
 				{
 					++i;
 					++j;
@@ -1575,6 +1605,78 @@ namespace Cafe::Encoding
 	{
 		return a <= b.GetView();
 	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy, std::ptrdiff_t Extent>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
+	operator+=(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>& a,
+	           StringView<CodePageValue, Extent> const& b)
+	{
+		a.Append(b);
+		return a;
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
+	operator+=(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>& a,
+	           String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
+	{
+		a.Append(b.GetView());
+		return a;
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy, std::ptrdiff_t Extent>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& a,
+	          StringView<CodePageValue, Extent> const& b)
+	{
+		String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> tmpStr(a);
+		tmpStr.Append(b);
+		return tmpStr;
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& a,
+	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
+	{
+		return a + b.GetView();
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy, std::ptrdiff_t Extent>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&& a,
+	          StringView<CodePageValue, Extent> const& b)
+	{
+		a.Append(b);
+		return std::move(a);
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&& a,
+	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
+	{
+		return std::move(a) + b.GetView();
+	}
+
+	template <CodePage::CodePageType CodePageValue, typename Allocator, std::size_t SsoThresholdSize,
+	          typename GrowPolicy, std::ptrdiff_t Extent>
+	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	operator+(StringView<CodePageValue, Extent> const& a,
+	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
+	{
+		String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> tmpStr(a);
+		tmpStr.Append(b.GetView());
+		return tmpStr;
+	}
+
+	// 注：两个 StringView 不可相加
 
 	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent>
 	template <typename Allocator, std::size_t SsoThresholdSize, typename GrowPolicy>
