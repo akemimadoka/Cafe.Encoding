@@ -511,22 +511,26 @@ namespace Cafe::Encoding
 		template <std::size_t Size>
 		class StringFindingCacheStorage
 		{
+			static_assert(Size != std::numeric_limits<std::size_t>::max());
+
 		public:
-			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size>, Size> GetCacheContent() noexcept
+			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size> GetCacheContent() noexcept
 			{
 				return m_Cache;
 			}
 
-			constexpr gsl::span<const Core::Misc::UnsignedMinTypeToHold<Size>, Size>
+			constexpr gsl::span<const Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
 			GetCacheContent() const noexcept
 			{
 				return m_Cache;
 			}
 
 		private:
-			std::array<Core::Misc::UnsignedMinTypeToHold<Size>, Size> m_Cache;
+			// 加 1 以保证 npos 不被合法值占用
+			std::array<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size> m_Cache;
 		};
 
+		// 在 C++20 将可能为 constexpr
 		template <>
 		class StringFindingCacheStorage<std::numeric_limits<std::size_t>::max()>
 		{
@@ -783,7 +787,7 @@ namespace Cafe::Encoding
 		/// @remark 用于在已分配且保证长度足够的存储上创建缓存，可能用于特殊优化
 		constexpr void
 		CreateFindingCacheAt(gsl::span<std::conditional_t<Extent == gsl::dynamic_extent, std::size_t,
-		                                                  Core::Misc::UnsignedMinTypeToHold<Extent>>,
+		                                                  Core::Misc::UnsignedMinTypeToHold<Extent + 1>>,
 		                               Extent> const& cacheStorage) const
 		    noexcept(Extent != gsl::dynamic_extent)
 		{
@@ -832,12 +836,12 @@ namespace Cafe::Encoding
 		[[nodiscard]] constexpr std::size_t
 		Find(StringView<CodePageValue, OtherExtent> const& pattern,
 		     gsl::span<std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
-		                                  Core::Misc::UnsignedMinTypeToHold<OtherExtent>>,
+		                                  Core::Misc::UnsignedMinTypeToHold<OtherExtent + 1>>,
 		               OtherExtent> const& findingCache) const noexcept
 		{
 			using FindingCacheElemType =
 			    std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
-			                       Core::Misc::UnsignedMinTypeToHold<OtherExtent>>;
+			                       Core::Misc::UnsignedMinTypeToHold<OtherExtent + 1>>;
 			constexpr auto FindingCacheNpos = static_cast<FindingCacheElemType>(-1);
 
 			const auto size = m_Span.size();
@@ -897,12 +901,7 @@ namespace Cafe::Encoding
 		/// @remark 空视图视为不以 0 结尾
 		constexpr bool IsNullTerminated() const noexcept
 		{
-			if (m_Span.empty())
-			{
-				return false;
-			}
-
-			return m_Span[m_Span.size() - 1] == CharType{};
+			return !m_Span.empty() && m_Span[m_Span.size() - 1] == CharType{};
 		}
 
 	private:
