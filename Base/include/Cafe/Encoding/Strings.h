@@ -514,7 +514,8 @@ namespace Cafe::Encoding
 			static_assert(Size != std::numeric_limits<std::size_t>::max());
 
 		public:
-			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size> GetCacheContent() noexcept
+			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
+			GetCacheContent() noexcept
 			{
 				return m_Cache;
 			}
@@ -785,11 +786,10 @@ namespace Cafe::Encoding
 
 		/// @brief  以 kmp 算法生成表来加速查找
 		/// @remark 用于在已分配且保证长度足够的存储上创建缓存，可能用于特殊优化
-		constexpr void
-		CreateFindingCacheAt(gsl::span<std::conditional_t<Extent == gsl::dynamic_extent, std::size_t,
-		                                                  Core::Misc::UnsignedMinTypeToHold<Extent + 1>>,
-		                               Extent> const& cacheStorage) const
-		    noexcept(Extent != gsl::dynamic_extent)
+		constexpr void CreateFindingCacheAt(
+		    gsl::span<std::conditional_t<Extent == gsl::dynamic_extent, std::size_t,
+		                                 Core::Misc::UnsignedMinTypeToHold<Extent + 1>>,
+		              Extent> const& cacheStorage) const noexcept(Extent != gsl::dynamic_extent)
 		{
 			if constexpr (Extent == gsl::dynamic_extent)
 			{
@@ -932,6 +932,23 @@ namespace Cafe::Encoding
 	[[nodiscard]] constexpr bool operator==(StringView<CodePageValue, Extent1> const& a,
 	                                        StringView<CodePageValue, Extent2> const& b) noexcept
 	{
+		if constexpr (Extent1 == Extent2)
+		{
+			if (&a == &b)
+			{
+				return true;
+			}
+		}
+
+		if constexpr (Extent1 == Extent2 || Extent1 == gsl::dynamic_extent ||
+		              Extent2 == gsl::dynamic_extent)
+		{
+			if (a.GetData() == b.GetData() && a.GetSize() == b.GetSize())
+			{
+				return true;
+			}
+		}
+
 		return a.GetSize() == b.GetSize() && a.Compare(b) == 0;
 	}
 
