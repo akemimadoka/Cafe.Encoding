@@ -1,8 +1,8 @@
 set(SOURCE_FILES
-    src/RuntimeEncoding.cpp)
+    src/Cafe/Encoding/RuntimeEncoding.cpp)
 
 set(HEADERS
-    include/Cafe/Encoding/RuntimeEncoding.h)
+    src/Cafe/Encoding/RuntimeEncoding.h)
 
 set(EncodingList "")
 foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
@@ -15,7 +15,7 @@ add_library(Cafe.Encoding.RuntimeEncoding ${SOURCE_FILES} ${HEADERS}
 
 target_include_directories(Cafe.Encoding.RuntimeEncoding PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>)
 
 foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
@@ -26,7 +26,7 @@ endforeach()
 install(TARGETS Cafe.Encoding.RuntimeEncoding
     EXPORT Encoding.RuntimeEncoding)
 
-install(DIRECTORY include/
+install(DIRECTORY src/
     TYPE INCLUDE
     FILES_MATCHING PATTERN "*.h")
 

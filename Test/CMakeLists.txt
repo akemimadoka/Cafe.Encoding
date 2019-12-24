@@ -31,3 +31,5 @@ if (CAFE_ENCODING_INCLUDE_RUNTIME_ENCODING)
     target_link_libraries(Cafe.Encoding.Test PRIVATE
         Cafe.Encoding.RuntimeEncoding)
 endif()
+
+ParseAndAddCatchTests(Cafe.Encoding.Test)

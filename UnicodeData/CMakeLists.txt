@@ -5,16 +5,16 @@ set(CAFE_ENCODING_UNICODE_DATA_INCLUDE_COMPILE_TIME OFF CACHE BOOL "Include comp
 
 if(CAFE_ENCODING_UNICODE_DATA_INCLUDE_RUNTIME)
     set(SOURCE_FILES
-        src/Encoding/RuntimeUnicodeData.cpp)
+        src/Cafe/Encoding/RuntimeUnicodeData.cpp)
 endif()
 
 set(HEADERS
-    include/Cafe/Encoding/RuntimeUnicodeData.h
-    include/Cafe/Encoding/UnicodeData.h
-    include/Cafe/Encoding/UnicodeDataTypes.h)
+    src/Cafe/Encoding/RuntimeUnicodeData.h
+    src/Cafe/Encoding/UnicodeData.h
+    src/Cafe/Encoding/UnicodeDataTypes.h)
 
 set(IMPL_HEADERS
-    include/Cafe/Encoding/Impl/UnicodeData.h)
+    src/Cafe/Encoding/Impl/UnicodeData.h)
 
 # 本项目编译时携带调试信息会严重影响编译速度，在有更好处理方案之前先去除相关 flag
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID MATCHES "MSVC"))
@@ -28,7 +28,7 @@ endif()
 add_library(Cafe.Encoding.UnicodeData ${SOURCE_FILES} ${HEADERS} ${IMPL_HEADERS})
 
 target_include_directories(Cafe.Encoding.UnicodeData PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(Cafe.Encoding.UnicodeData PUBLIC
@@ -37,7 +37,7 @@ target_link_libraries(Cafe.Encoding.UnicodeData PUBLIC
 install(TARGETS Cafe.Encoding.UnicodeData
     EXPORT Encoding.UnicodeData)
 
-install(DIRECTORY include/
+install(DIRECTORY src/
     TYPE INCLUDE
     FILES_MATCHING PATTERN "*.h")
 

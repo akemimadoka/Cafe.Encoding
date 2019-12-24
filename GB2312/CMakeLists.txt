@@ -1,7 +1,7 @@
 add_library(Cafe.Encoding.GB2312 INTERFACE)
 
 target_include_directories(Cafe.Encoding.GB2312 INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(Cafe.Encoding.GB2312 INTERFACE Cafe.Encoding.Base)
@@ -9,7 +9,7 @@ target_link_libraries(Cafe.Encoding.GB2312 INTERFACE Cafe.Encoding.Base)
 install(TARGETS Cafe.Encoding.GB2312
     EXPORT Encoding.GB2312)
 
-install(DIRECTORY include/
+install(DIRECTORY src/
     TYPE INCLUDE
     FILES_MATCHING PATTERN "*.h")
 

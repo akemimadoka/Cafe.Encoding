@@ -255,12 +255,13 @@ namespace Cafe::Encoding
 			constexpr void Resize(std::size_t newSize, CharType value = CharType{})
 			{
 				assert(newSize > 0);
-				--newSize; // 去除结尾空编码单元
 
 				if (newSize > m_Capacity)
 				{
 					Reserve(newSize);
 				}
+
+				--newSize; // 去除结尾空编码单元
 
 				if (newSize > m_Size)
 				{
@@ -878,11 +879,11 @@ namespace Cafe::Encoding
 			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
 		}
 
-		template <typename Allocator =
-		              std::allocator<typename CodePage::CodePageTrait<CodePageValue>::CharType>,
+		template <typename Allocator = std::allocator<CharType>,
 		          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
 		          typename GrowPolicy = Detail::DefaultGrowPolicy>
-		String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy> ToString() const;
+		String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
+		ToString(Allocator allocator = std::allocator<CharType>{}) const;
 
 		template <typename Allocator>
 		std::basic_string<CharType, std::char_traits<CharType>, Allocator>
@@ -1697,10 +1698,10 @@ namespace Cafe::Encoding
 	template <CodePage::CodePageType CodePageValue, std::ptrdiff_t Extent>
 	template <typename Allocator, std::size_t SsoThresholdSize, typename GrowPolicy>
 	String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
-	StringView<CodePageValue, Extent>::ToString() const
+	StringView<CodePageValue, Extent>::ToString(Allocator allocator) const
 	{
 		return String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
-		              GrowPolicy>{ *this };
+		              GrowPolicy>{ *this, std::move(allocator) };
 	}
 
 #if __cpp_nontype_template_parameter_class >= 201806L
