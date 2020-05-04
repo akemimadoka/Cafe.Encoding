@@ -226,7 +226,7 @@ namespace Cafe::Encoding
 			}
 		}
 
-		template <std::ptrdiff_t Extent, typename OutputReceiver>
+		template <std::size_t Extent, typename OutputReceiver>
 		static constexpr void EncodeAll(gsl::span<const CharType, Extent> const& span,
 		                                OutputReceiver&& receiver)
 		{

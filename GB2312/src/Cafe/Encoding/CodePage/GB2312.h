@@ -56,7 +56,7 @@ namespace Cafe::Encoding
 				return 2;
 			}
 
-			template <std::ptrdiff_t Extent, typename OutputReceiver>
+			template <std::size_t Extent, typename OutputReceiver>
 			static constexpr void ToCodePoint(gsl::span<const CharType, Extent> const& span,
 			                                  OutputReceiver&& receiver)
 			{
@@ -123,14 +123,14 @@ namespace Cafe::Encoding
 					const auto result = static_cast<CharType>(codePoint);
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, GB2312, EncodingResultCode::Accept>{
-					        gsl::make_span(&result, 1) });
+					        gsl::span(&result, 1) });
 				}
 				else if (codePoint == 0x20AC) // 特殊硬编码对应
 				{
 					constexpr CharType result = 0x80;
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, GB2312, EncodingResultCode::Accept>{
-					        gsl::make_span(&result, 1) });
+					        gsl::span(&result, 1) });
 				}
 				else
 				{
@@ -146,7 +146,7 @@ namespace Cafe::Encoding
 						                       static_cast<CharType>(mappedUnit & 0xFF) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, GB2312, EncodingResultCode::Accept>{
-					        gsl::make_span(result) });
+					        gsl::span(result) });
 				}
 			}
 		};

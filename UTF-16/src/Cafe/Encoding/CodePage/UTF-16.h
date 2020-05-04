@@ -63,7 +63,7 @@ namespace Cafe::Encoding
 					return 1;
 				}
 
-				template <std::ptrdiff_t Extent, typename OutputReceiver>
+				template <std::size_t Extent, typename OutputReceiver>
 				static constexpr void ToCodePoint(gsl::span<const CharType, Extent> const& span,
 				                                  OutputReceiver&& receiver)
 				{
@@ -130,7 +130,7 @@ namespace Cafe::Encoding
 						const CharType result[] = { MaySwapEndian(static_cast<CharType>(codePoint)) };
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<CodePoint, Utf16, EncodingResultCode::Accept>{
-						        gsl::make_span(result) });
+						        gsl::span(result) });
 					}
 					else
 					{
@@ -141,7 +141,7 @@ namespace Cafe::Encoding
 						};
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<CodePoint, Utf16, EncodingResultCode::Accept>{
-						        gsl::make_span(result) });
+						        gsl::span(result) });
 					}
 				}
 			};
@@ -168,28 +168,28 @@ namespace Cafe::Encoding
 		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size + 1);
+			return gsl::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf16LittleEndian> operator""_les(
 		    const typename CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return String<CodePage::Utf16LittleEndian>{ gsl::make_span(str, size + 1) };
+			return String<CodePage::Utf16LittleEndian>{ gsl::span(str, size + 1) };
 		}
 
 		constexpr StringView<CodePage::Utf16BigEndian>
 		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
 		                std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size + 1);
+			return gsl::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf16BigEndian>
 		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
 		               std::size_t size) noexcept
 		{
-			return String<CodePage::Utf16BigEndian>{ gsl::make_span(str, size + 1) };
+			return String<CodePage::Utf16BigEndian>{ gsl::span(str, size + 1) };
 		}
 
 		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
@@ -200,7 +200,7 @@ namespace Cafe::Encoding
 		                                               : CodePage::Utf16BigEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size + 1);
+			return gsl::span(str, size + 1);
 		}
 
 		inline String<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
@@ -213,7 +213,7 @@ namespace Cafe::Encoding
 		{
 			return String < std::endian::native == std::endian::little
 			           ? CodePage::Utf16LittleEndian
-			           : CodePage::Utf16BigEndian > { gsl::make_span(str, size + 1) };
+			           : CodePage::Utf16BigEndian > { gsl::span(str, size + 1) };
 		}
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding

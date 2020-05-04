@@ -16,7 +16,7 @@ TEST_CASE("Cafe.Encoding.Base.Encoder", "[Encoding][String]")
 	{
 		String<CodePage::Utf8> str;
 		Encoder<CodePage::Utf16LittleEndian, CodePage::Utf8>::EncodeAll(
-		    gsl::make_span(u"\xD852\xDF62\xFEFF"), [&](auto const& result) {
+		    gsl::span(u"\xD852\xDF62\xFEFF"), [&](auto const& result) {
 			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 			    {
 				    str.Append(result.Result);

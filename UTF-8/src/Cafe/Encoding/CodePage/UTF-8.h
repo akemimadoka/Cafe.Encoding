@@ -78,7 +78,7 @@ namespace Cafe::Encoding
 			/// @remark 若是变长编码则接受 span，否则是单个编码单元
 			///         receiver 应可接受 EncodingResult 中 FromCodePage 是当前代码页，
 			///         ToCodePage 是 CodePoint，所有结果代码的实例
-			template <std::ptrdiff_t Extent, typename OutputReceiver>
+			template <std::size_t Extent, typename OutputReceiver>
 			static constexpr void ToCodePoint(gsl::span<const CharType, Extent> const& span,
 			                                  OutputReceiver&& receiver)
 			{
@@ -186,7 +186,7 @@ namespace Cafe::Encoding
 					const CharType result[]{ static_cast<CharType>(codePoint) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
-					        gsl::make_span(result) });
+					        gsl::span(result) });
 				}
 				else if (codePoint <= 0x0007FF)
 				{
@@ -194,7 +194,7 @@ namespace Cafe::Encoding
 						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
-					        gsl::make_span(result) });
+					        gsl::span(result) });
 				}
 				else if (codePoint <= 0x00D7FF || (codePoint >= 0x00E000 && codePoint <= 0x00FFFF))
 				{
@@ -203,7 +203,7 @@ namespace Cafe::Encoding
 						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
-					        gsl::make_span(result) });
+					        gsl::span(result) });
 				}
 				else if (codePoint >= 0x010000 && codePoint <= 0x10FFFF)
 				{
@@ -213,7 +213,7 @@ namespace Cafe::Encoding
 						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
-					        gsl::make_span(result) });
+					        gsl::span(result) });
 				}
 				else
 				{
@@ -231,7 +231,7 @@ namespace Cafe::Encoding
 		using Trait = CodePage::CodePageTrait<CodePage::Utf8>;
 		using CharType = typename Trait::CharType;
 
-		template <std::ptrdiff_t Extent, typename OutputReceiver>
+		template <std::size_t Extent, typename OutputReceiver>
 		static constexpr void EncodeAll(gsl::span<const CharType, Extent> const& span,
 		                                OutputReceiver&& receiver)
 		{
@@ -261,12 +261,12 @@ namespace Cafe::Encoding
 		constexpr StringView<CodePage::Utf8> operator""_sv(const char8_t* str,
 		                                                   std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size + 1);
+			return gsl::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
 		{
-			return String<CodePage::Utf8>{ gsl::make_span(str, size + 1) };
+			return String<CodePage::Utf8>{ gsl::span(str, size + 1) };
 		}
 #endif
 
@@ -274,13 +274,13 @@ namespace Cafe::Encoding
 		operator""_u8sv(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
 		                std::size_t size) noexcept
 		{
-			return gsl::make_span(str, size + 1);
+			return gsl::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf8>
 		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
 		{
-			return String<CodePage::Utf8>{ gsl::make_span(str, size + 1) };
+			return String<CodePage::Utf8>{ gsl::span(str, size + 1) };
 		}
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding

@@ -24,7 +24,7 @@ TEST_CASE("Cafe.Encoding.UTF-16", "[Encoding][UTF-16]")
 		    });
 
 		CodePage::CodePageTrait<CodePage::Utf16LittleEndian>::ToCodePoint(
-		    gsl::make_span(u"\xD852\xDF62"), [](auto const& result) {
+		    gsl::span(u"\xD852\xDF62"), [](auto const& result) {
 			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 			    {
 				    REQUIRE(result.Result == 0x24B62);
@@ -53,7 +53,7 @@ TEST_CASE("Cafe.Encoding.UTF-16", "[Encoding][UTF-16]")
 		    });
 
 		CodePage::CodePageTrait<CodePage::Utf16BigEndian>::ToCodePoint(
-		    gsl::make_span(u"\x52D8\x62DF"), [](auto const& result) {
+		    gsl::span(u"\x52D8\x62DF"), [](auto const& result) {
 			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 			    {
 				    REQUIRE(result.Result == 0x24B62);

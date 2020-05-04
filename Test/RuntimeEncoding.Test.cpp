@@ -18,7 +18,7 @@ TEST_CASE("Cafe.Encoding.RuntimeEncoding", "[Encoding][RuntimeEncoding]")
 		    CodePage::Utf16LittleEndian, gsl::as_bytes(u16Str.GetSpan()), CodePage::Utf8,
 		    [&](auto const& result) {
 			    REQUIRE(result.ResultCode == EncodingResultCode::Accept);
-			    resultStr.Append(gsl::make_span(
+			    resultStr.Append(gsl::span(
 			        reinterpret_cast<const typename CodePage::CodePageTrait<CodePage::Utf8>::CharType*>(
 			            result.Result.data()),
 			        result.Result.size()));

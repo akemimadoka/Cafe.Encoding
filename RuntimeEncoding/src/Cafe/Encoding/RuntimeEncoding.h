@@ -50,7 +50,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					void* dummyPtr = const_cast<std::byte*>(src.data());
 					if (std::align(alignof(FromCharType), src.size(), dummyPtr, dummy) == src.data())
 					{
-						return gsl::make_span(reinterpret_cast<const FromCharType*>(src.data()),
+						return gsl::span(reinterpret_cast<const FromCharType*>(src.data()),
 						                      src.size() / sizeof(FromCharType));
 					}
 					else
@@ -66,7 +66,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 						}
 						mayBeDynamicAllocatedBuffer = std::make_unique<FromCharType[]>(size);
 						std::memcpy(mayBeDynamicAllocatedBuffer.get(), src.data(), src.size());
-						return gsl::make_span(&std::as_const(*mayBeDynamicAllocatedBuffer.get()), size);
+						return gsl::span(&std::as_const(*mayBeDynamicAllocatedBuffer.get()), size);
 					}
 				}
 				else
@@ -99,7 +99,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					}
 					else
 					{
-						resultSpan = gsl::make_span(&result.Result, 1);
+						resultSpan = gsl::span(&result.Result, 1);
 					}
 					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<CharType>{
 					    resultSpan, EncodingResultCode::Accept, advanceCount * sizeof(FromCharType) });
@@ -204,7 +204,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					}
 					else
 					{
-						resultSpan = gsl::as_bytes(gsl::make_span(&result.Result, 1));
+						resultSpan = gsl::as_bytes(gsl::span(&result.Result, 1));
 					}
 
 					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{

@@ -4,7 +4,7 @@
 gsl::span<const Cafe::Encoding::CodePage::CodePageType>
 Cafe::Encoding::RuntimeEncoding::GetSupportCodePages() noexcept
 {
-	return gsl::make_span(Cafe::Core::Misc::SequenceToArray<AllIncludedCodePages>::Array);
+	return gsl::span(Cafe::Core::Misc::SequenceToArray<AllIncludedCodePages>::Array);
 }
 
 std::string_view
