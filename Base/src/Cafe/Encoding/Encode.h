@@ -31,6 +31,11 @@ namespace Cafe::Encoding
 			std::size_t AdvanceCount;
 		};
 
+		struct AlwaysOneCountInfo
+		{
+			std::integral_constant<std::size_t, 1> AdvanceCount;
+		};
+
 		template <typename ToType, typename FromType>
 		constexpr ToType CastOrDefaultConstruct(FromType&& value)
 		{
@@ -53,10 +58,10 @@ namespace Cafe::Encoding
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	struct EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>
 	    : Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
-	                           Detail::AdvanceCountInfo>
+	                           Detail::AdvanceCountInfo, Detail::AlwaysOneCountInfo>
 	{
 		using Base = Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
-		                                  Detail::AdvanceCountInfo>;
+		                                  Detail::AdvanceCountInfo, Detail::AlwaysOneCountInfo>;
 
 		using ResultType = std::conditional_t<
 		    CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth,
@@ -248,14 +253,7 @@ namespace Cafe::Encoding
 				Encode(encodeUnit, [&](auto const& result) {
 					if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 					{
-						if constexpr (FromCodePageTrait::IsVariableWidth)
-						{
-							remainedSpan = remainedSpan.subspan(result.AdvanceCount);
-						}
-						else
-						{
-							remainedSpan = remainedSpan.subspan(1);
-						}
+						remainedSpan = remainedSpan.subspan(result.AdvanceCount);
 					}
 					else
 					{

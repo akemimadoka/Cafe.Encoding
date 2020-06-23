@@ -75,7 +75,8 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 			REQUIRE(!succeed);
 			REQUIRE(map.size() == 2);
 			const auto iter = map.find(CAFE_UTF8_SV("abc"));
-			REQUIRE(iter != map.end());
+			const auto b = iter != map.end();
+			REQUIRE(b);
 			REQUIRE(iter->second == CAFE_UTF8_SV("def"));
 		}
 
@@ -87,7 +88,8 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 			REQUIRE(!succeed);
 			REQUIRE(map.size() == 2);
 			const auto iter = map.find(CAFE_UTF8_SV("abc"));
-			REQUIRE(iter != map.end());
+			const auto b = iter != map.end();
+			REQUIRE(b);
 			REQUIRE(iter->second == CAFE_UTF8_SV("def"));
 		}
 

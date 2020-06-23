@@ -15,7 +15,7 @@ endif()
 add_executable(Cafe.Encoding.Test ${SOURCE_FILES})
 
 target_link_libraries(Cafe.Encoding.Test PRIVATE
-    CONAN_PKG::Catch2 Cafe.Encoding.Base)
+    CONAN_PKG::catch2 Cafe.Encoding.Base)
 
 foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
     target_link_libraries(Cafe.Encoding.Test PRIVATE

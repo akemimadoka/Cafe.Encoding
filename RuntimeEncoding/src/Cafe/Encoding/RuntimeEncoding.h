@@ -81,17 +81,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 			const auto innerReceiver = [&](auto const& result) {
 				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 				{
-					std::size_t advanceCount;
+					std::size_t advanceCount = result.AdvanceCount;
 					gsl::span<const CharType> resultSpan;
-
-					if constexpr (FromCodePageTrait::IsVariableWidth)
-					{
-						advanceCount = result.AdvanceCount;
-					}
-					else
-					{
-						advanceCount = 1;
-					}
 
 					if constexpr (UsingCodePageTrait::IsVariableWidth)
 					{
@@ -187,16 +178,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 			const auto innerReceiver = [&](auto const& result) {
 				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 				{
-					std::size_t advanceCount;
+					std::size_t advanceCount = result.AdvanceCount;
 					gsl::span<const std::byte> resultSpan;
-					if constexpr (UsingCodePageTrait::IsVariableWidth)
-					{
-						advanceCount = result.AdvanceCount;
-					}
-					else
-					{
-						advanceCount = 1;
-					}
 
 					if constexpr (ToCodePageTrait::IsVariableWidth)
 					{
