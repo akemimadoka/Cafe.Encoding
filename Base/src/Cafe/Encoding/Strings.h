@@ -2,7 +2,7 @@
 
 #include "Encode.h"
 #include <cassert>
-#include <gsl/span>
+#include <span>
 #include <memory>
 
 namespace Cafe::Encoding
@@ -48,7 +48,7 @@ namespace Cafe::Encoding
 			}
 
 			template <std::size_t Extent>
-			constexpr StringStorage(gsl::span<const CharType, Extent> const& src,
+			constexpr StringStorage(std::span<const CharType, Extent> const& src,
 			                        Allocator const& allocator = Allocator{})
 			    : m_Allocator{ allocator }, m_Size{ static_cast<std::size_t>(src.size()) }
 			{
@@ -83,7 +83,7 @@ namespace Cafe::Encoding
 			          typename OtherGrowPolicy>
 			constexpr StringStorage(StringStorage<CharType, OtherAllocator, OtherSsoThresholdSize,
 			                                      OtherGrowPolicy> const& other)
-			    : StringStorage(gsl::span(other.GetStorage(), other.GetSize()))
+			    : StringStorage(std::span(other.GetStorage(), other.GetSize()))
 			{
 			}
 
@@ -117,7 +117,7 @@ namespace Cafe::Encoding
 						{
 							m_Allocator->~Allocator();
 							new (static_cast<void*>(this)) StringStorage(
-							    gsl::span(other.GetStorage(), other.GetSize()), other.m_Allocator);
+							    std::span(other.GetStorage(), other.GetSize()), other.m_Allocator);
 							other.Clear();
 						}
 						else
@@ -170,7 +170,7 @@ namespace Cafe::Encoding
 					m_Allocator = other.m_Allocator;
 				}
 
-				Assign(gsl::span(other.GetStorage(), other.GetSize()));
+				Assign(std::span(other.GetStorage(), other.GetSize()));
 
 				return *this;
 			}
@@ -274,7 +274,7 @@ namespace Cafe::Encoding
 
 			/// @remark  用于在已确保 Reserve 足够内存的情况下不检查边界进行追加操作
 			template <std::size_t Extent>
-			constexpr void UncheckedAppend(gsl::span<const CharType, Extent> const& src)
+			constexpr void UncheckedAppend(std::span<const CharType, Extent> const& src)
 			{
 				const auto isSrcNullTerminated = src[src.size() - 1] == CharType{};
 				const auto srcSize = src.size() - isSrcNullTerminated;
@@ -292,7 +292,7 @@ namespace Cafe::Encoding
 			}
 
 			template <std::size_t Extent>
-			constexpr void Append(gsl::span<const CharType, Extent> const& src)
+			constexpr void Append(std::span<const CharType, Extent> const& src)
 			{
 				if (src.empty())
 				{
@@ -329,7 +329,7 @@ namespace Cafe::Encoding
 
 			/// @brief  用于在已确保 Reserve 足够内存的情况下不检查边界进行赋值操作
 			template <std::size_t Extent>
-			constexpr void UncheckedAssign(gsl::span<const CharType, Extent> const& src)
+			constexpr void UncheckedAssign(std::span<const CharType, Extent> const& src)
 			{
 				Clear();
 				UncheckedAppend(src);
@@ -342,7 +342,7 @@ namespace Cafe::Encoding
 			}
 
 			template <std::size_t Extent>
-			constexpr void Assign(gsl::span<const CharType, Extent> const& src)
+			constexpr void Assign(std::span<const CharType, Extent> const& src)
 			{
 				Clear();
 				Append(src);
@@ -356,7 +356,7 @@ namespace Cafe::Encoding
 
 			template <std::size_t Extent>
 			constexpr CharType* UncheckedInsert(const CharType* pos,
-			                                    gsl::span<const CharType, Extent> const& src)
+			                                    std::span<const CharType, Extent> const& src)
 			{
 				const auto isSrcNullTerminated = src[src.size() - 1] == CharType{};
 				const auto srcSize = src.size() - isSrcNullTerminated;
@@ -377,7 +377,7 @@ namespace Cafe::Encoding
 			}
 
 			template <std::size_t Extent>
-			constexpr CharType* Insert(const CharType* pos, gsl::span<const CharType, Extent> const& src)
+			constexpr CharType* Insert(const CharType* pos, std::span<const CharType, Extent> const& src)
 			{
 				assert(GetStorage() <= pos && pos - GetStorage() <= m_Size);
 				if (pos == GetStorage() + m_Size)
@@ -515,13 +515,13 @@ namespace Cafe::Encoding
 			static_assert(Size != std::numeric_limits<std::size_t>::max());
 
 		public:
-			constexpr gsl::span<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
+			constexpr std::span<Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
 			GetCacheContent() noexcept
 			{
 				return m_Cache;
 			}
 
-			constexpr gsl::span<const Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
+			constexpr std::span<const Core::Misc::UnsignedMinTypeToHold<Size + 1>, Size>
 			GetCacheContent() const noexcept
 			{
 				return m_Cache;
@@ -542,14 +542,14 @@ namespace Cafe::Encoding
 			{
 			}
 
-			gsl::span<std::size_t> GetCacheContent() noexcept
+			std::span<std::size_t> GetCacheContent() noexcept
 			{
-				return gsl::span(m_Cache.get(), m_CacheSize);
+				return std::span(m_Cache.get(), m_CacheSize);
 			}
 
-			gsl::span<const std::size_t> GetCacheContent() const noexcept
+			std::span<const std::size_t> GetCacheContent() const noexcept
 			{
-				return gsl::span(m_Cache.get(), m_CacheSize);
+				return std::span(m_Cache.get(), m_CacheSize);
 			}
 
 		private:
@@ -584,7 +584,7 @@ namespace Cafe::Encoding
 	/// @brief  字符串视图
 	/// @tparam CodePageValue   使用的编码
 	/// @remark 不保证 0 结尾
-	template <CodePage::CodePageType CodePageValue, std::size_t Extent = gsl::dynamic_extent>
+	template <CodePage::CodePageType CodePageValue, std::size_t Extent = std::dynamic_extent>
 	class StringView
 	{
 	public:
@@ -593,7 +593,7 @@ namespace Cafe::Encoding
 	private:
 		using UsingCodePageTrait = CodePage::CodePageTrait<UsingCodePage>;
 		using CharType = typename UsingCodePageTrait::CharType;
-		using SpanType = gsl::span<const CharType, Extent>;
+		using SpanType = std::span<const CharType, Extent>;
 
 	public:
 		using const_pointer = const CharType*;
@@ -617,7 +617,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t N>
-		constexpr StringView(const CharType (&array)[N]) noexcept : StringView{ gsl::span(array) }
+		constexpr StringView(const CharType (&array)[N]) noexcept : StringView{ std::span(array) }
 		{
 		}
 
@@ -675,7 +675,7 @@ namespace Cafe::Encoding
 		}
 
 		[[nodiscard]] constexpr StringView<CodePageValue>
-		SubStr(size_type begin, size_type size = gsl::dynamic_extent) const noexcept
+		SubStr(size_type begin, size_type size = std::dynamic_extent) const noexcept
 		{
 			return StringView<CodePageValue>{ m_Span.subspan(begin, size) };
 		}
@@ -686,7 +686,7 @@ namespace Cafe::Encoding
 		}
 
 		/// @brief  若以空编码单元结尾则返回去除结尾空编码单元的 span，否则等价于 GetSpan()
-		[[nodiscard]] constexpr gsl::span<const CharType> GetTrimmedSpan() const noexcept
+		[[nodiscard]] constexpr std::span<const CharType> GetTrimmedSpan() const noexcept
 		{
 			return m_Span.subspan(0, GetSize() - IsNullTerminated());
 		}
@@ -764,12 +764,12 @@ namespace Cafe::Encoding
 		}
 
 		[[nodiscard]] constexpr Detail::StringFindingCacheStorage<static_cast<std::size_t>(Extent)>
-		CreateFindingCache() const noexcept(Extent != gsl::dynamic_extent)
+		CreateFindingCache() const noexcept(Extent != std::dynamic_extent)
 		{
 			auto result = [this]() constexpr
 			                  ->Detail::StringFindingCacheStorage<static_cast<std::size_t>(Extent)>
 			{
-				if constexpr (Extent == gsl::dynamic_extent)
+				if constexpr (Extent == std::dynamic_extent)
 				{
 					return { GetSize() };
 				}
@@ -788,11 +788,11 @@ namespace Cafe::Encoding
 		/// @brief  以 kmp 算法生成表来加速查找
 		/// @remark 用于在已分配且保证长度足够的存储上创建缓存，可能用于特殊优化
 		constexpr void CreateFindingCacheAt(
-		    gsl::span<std::conditional_t<Extent == gsl::dynamic_extent, std::size_t,
+		    std::span<std::conditional_t<Extent == std::dynamic_extent, std::size_t,
 		                                 Core::Misc::UnsignedMinTypeToHold<Extent + 1>>,
-		              Extent> const& cacheStorage) const noexcept(Extent != gsl::dynamic_extent)
+		              Extent> const& cacheStorage) const noexcept(Extent != std::dynamic_extent)
 		{
-			if constexpr (Extent == gsl::dynamic_extent)
+			if constexpr (Extent == std::dynamic_extent)
 			{
 				if (cacheStorage.size() < m_Span.size())
 				{
@@ -836,12 +836,12 @@ namespace Cafe::Encoding
 		template <std::size_t OtherExtent>
 		[[nodiscard]] constexpr std::size_t
 		Find(StringView<CodePageValue, OtherExtent> const& pattern,
-		     gsl::span<std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
+		     std::span<std::conditional_t<OtherExtent == std::dynamic_extent, std::size_t,
 		                                  Core::Misc::UnsignedMinTypeToHold<OtherExtent + 1>>,
 		               OtherExtent> const& findingCache) const noexcept
 		{
 			using FindingCacheElemType =
-			    std::conditional_t<OtherExtent == gsl::dynamic_extent, std::size_t,
+			    std::conditional_t<OtherExtent == std::dynamic_extent, std::size_t,
 			                       Core::Misc::UnsignedMinTypeToHold<OtherExtent + 1>>;
 			constexpr auto FindingCacheNpos = static_cast<FindingCacheElemType>(-1);
 
@@ -874,7 +874,7 @@ namespace Cafe::Encoding
 		template <std::size_t OtherExtent>
 		[[nodiscard]] constexpr std::size_t
 		Find(StringView<CodePageValue, OtherExtent> const& pattern) const
-		    noexcept(OtherExtent != gsl::dynamic_extent)
+		    noexcept(OtherExtent != std::dynamic_extent)
 		{
 			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
 		}
@@ -923,7 +923,7 @@ namespace Cafe::Encoding
 	/// @brief  用于快速从 C 风格字符串构造字符串视图
 	template <CodePage::CodePageType CodePageValue, std::size_t N>
 	constexpr StringView<CodePageValue, N>
-	AsView(gsl::span<const typename CodePage::CodePageTrait<CodePageValue>::CharType, N> const&
+	AsView(std::span<const typename CodePage::CodePageTrait<CodePageValue>::CharType, N> const&
 	           span) noexcept
 	{
 		return { span };
@@ -941,8 +941,8 @@ namespace Cafe::Encoding
 			}
 		}
 
-		if constexpr (Extent1 == Extent2 || Extent1 == gsl::dynamic_extent ||
-		              Extent2 == gsl::dynamic_extent)
+		if constexpr (Extent1 == Extent2 || Extent1 == std::dynamic_extent ||
+		              Extent2 == std::dynamic_extent)
 		{
 			if (a.GetData() == b.GetData() && a.GetSize() == b.GetSize())
 			{
@@ -1039,7 +1039,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent,
-		          std::enable_if_t<Extent == gsl::dynamic_extent || Extent <= MaxSize, int> = 0>
+		          std::enable_if_t<Extent == std::dynamic_extent || Extent <= MaxSize, int> = 0>
 		constexpr StaticString(StringView<CodePageValue, Extent> const& str) noexcept
 		{
 			Assign(str);
@@ -1047,14 +1047,14 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr StringView<CodePageValue> GetView() const noexcept
 		{
-			return gsl::span(m_Storage.data(), GetSize());
+			return std::span(m_Storage.data(), GetSize());
 		}
 
 		template <std::size_t Extent,
-		          std::enable_if_t<Extent == gsl::dynamic_extent || Extent <= MaxSize, int> = 0>
+		          std::enable_if_t<Extent == std::dynamic_extent || Extent <= MaxSize, int> = 0>
 		constexpr StaticString& Assign(StringView<CodePageValue, Extent> const& str) noexcept
 		{
-			if constexpr (Extent == gsl::dynamic_extent)
+			if constexpr (Extent == std::dynamic_extent)
 			{
 				m_Size = std::min(str.GetSize() - str.IsNullTerminated(), MaxSize);
 			}
@@ -1089,12 +1089,12 @@ namespace Cafe::Encoding
 			return m_Storage.data();
 		}
 
-		[[nodiscard]] constexpr gsl::span<CharType> GetSpan() noexcept
+		[[nodiscard]] constexpr std::span<CharType> GetSpan() noexcept
 		{
 			return { m_Storage.data(), GetSize() };
 		}
 
-		[[nodiscard]] constexpr gsl::span<const CharType> GetSpan() const noexcept
+		[[nodiscard]] constexpr std::span<const CharType> GetSpan() const noexcept
 		{
 			return { m_Storage.data(), GetSize() };
 		}
@@ -1145,7 +1145,7 @@ namespace Cafe::Encoding
 	};
 
 	template <CodePage::CodePageType CodePageValue, std::size_t Extent,
-	          std::enable_if_t<Extent != gsl::dynamic_extent, int> = 0>
+	          std::enable_if_t<Extent != std::dynamic_extent, int> = 0>
 	StaticString(StringView<CodePageValue, Extent> const& str)->StaticString<CodePageValue, Extent>;
 
 	template <typename T>
@@ -1197,7 +1197,7 @@ namespace Cafe::Encoding
 
 		using allocator_type = Allocator;
 
-		template <std::size_t Extent = gsl::dynamic_extent>
+		template <std::size_t Extent = std::dynamic_extent>
 		using ViewType = StringView<CodePageValue, Extent>;
 
 		constexpr String() noexcept(std::is_nothrow_default_constructible_v<UsingStorageType>)
@@ -1209,7 +1209,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent>
-		constexpr explicit String(gsl::span<const CharType, Extent> const& src,
+		constexpr explicit String(std::span<const CharType, Extent> const& src,
 		                          Allocator const& allocator = Allocator{})
 		    : m_Storage{ src, allocator }
 		{
@@ -1301,7 +1301,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent>
-		constexpr void Assign(gsl::span<const CharType, Extent> const& src)
+		constexpr void Assign(std::span<const CharType, Extent> const& src)
 		{
 			m_Storage.Assign(src);
 		}
@@ -1312,14 +1312,14 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent>
-		constexpr String& operator=(gsl::span<const CharType, Extent> const& src)
+		constexpr String& operator=(std::span<const CharType, Extent> const& src)
 		{
 			Assign(src);
 			return *this;
 		}
 
 		template <std::size_t Extent>
-		constexpr void Append(gsl::span<const CharType, Extent> const& src)
+		constexpr void Append(std::span<const CharType, Extent> const& src)
 		{
 			m_Storage.Append(src);
 		}
@@ -1336,7 +1336,7 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent>
-		constexpr iterator Insert(const_iterator pos, gsl::span<const CharType, Extent> const& src)
+		constexpr iterator Insert(const_iterator pos, std::span<const CharType, Extent> const& src)
 		{
 			return m_Storage.Insert(pos, src);
 		}
@@ -1467,7 +1467,7 @@ namespace Cafe::Encoding
 
 		[[nodiscard]] constexpr ViewType<> GetView() const noexcept
 		{
-			return ViewType<>{ gsl::span(m_Storage.GetStorage(), m_Storage.GetSize()) };
+			return ViewType<>{ std::span(m_Storage.GetStorage(), m_Storage.GetSize()) };
 		}
 
 		[[nodiscard]] constexpr operator ViewType<>() const noexcept

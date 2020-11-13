@@ -15,7 +15,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	                                                   >;
 
-	CAFE_PUBLIC gsl::span<const CodePage::CodePageType> GetSupportCodePages() noexcept;
+	CAFE_PUBLIC std::span<const CodePage::CodePageType> GetSupportCodePages() noexcept;
 
 	CAFE_PUBLIC std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
 	CAFE_PUBLIC std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
@@ -24,7 +24,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	template <typename ResultUnitType>
 	struct RuntimeEncodingResult
 	{
-		gsl::span<const ResultUnitType> Result;
+		std::span<const ResultUnitType> Result;
 		EncodingResultCode ResultCode;
 		std::size_t AdvanceCount; ///< @brief 编码消费的编码单元数，若来源方运行时确定则是字节数
 	};
@@ -37,7 +37,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 	private:
 		template <bool IsEncodeOne, CodePage::CodePageType FromCodePage, typename OutputReceiver>
-		static void EncodeFromImpl(gsl::span<const std::byte> const& src, OutputReceiver&& receiver)
+		static void EncodeFromImpl(std::span<const std::byte> const& src, OutputReceiver&& receiver)
 		{
 			using FromCodePageTrait = CodePage::CodePageTrait<FromCodePage>;
 			using FromCharType = typename FromCodePageTrait::CharType;
@@ -50,7 +50,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					void* dummyPtr = const_cast<std::byte*>(src.data());
 					if (std::align(alignof(FromCharType), src.size(), dummyPtr, dummy) == src.data())
 					{
-						return gsl::span(reinterpret_cast<const FromCharType*>(src.data()),
+						return std::span(reinterpret_cast<const FromCharType*>(src.data()),
 						                      src.size() / sizeof(FromCharType));
 					}
 					else
@@ -66,7 +66,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 						}
 						mayBeDynamicAllocatedBuffer = std::make_unique<FromCharType[]>(size);
 						std::memcpy(mayBeDynamicAllocatedBuffer.get(), src.data(), src.size());
-						return gsl::span(&std::as_const(*mayBeDynamicAllocatedBuffer.get()), size);
+						return std::span(&std::as_const(*mayBeDynamicAllocatedBuffer.get()), size);
 					}
 				}
 				else
@@ -82,7 +82,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 				{
 					std::size_t advanceCount = result.AdvanceCount;
-					gsl::span<const CharType> resultSpan;
+					std::span<const CharType> resultSpan;
 
 					if constexpr (UsingCodePageTrait::IsVariableWidth)
 					{
@@ -90,7 +90,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 					}
 					else
 					{
-						resultSpan = gsl::span(&result.Result, 1);
+						resultSpan = std::span(&result.Result, 1);
 					}
 					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<CharType>{
 					    resultSpan, EncodingResultCode::Accept, advanceCount * sizeof(FromCharType) });
@@ -115,7 +115,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	public:
 		template <typename OutputReceiver>
 		static void EncodeOneFrom(CodePage::CodePageType fromCodePage,
-		                          gsl::span<const std::byte> const& src, OutputReceiver&& receiver)
+		                          std::span<const std::byte> const& src, OutputReceiver&& receiver)
 		{
 			if (src.empty())
 			{
@@ -136,7 +136,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 		template <typename OutputReceiver>
 		static void EncodeAllFrom(CodePage::CodePageType fromCodePage,
-		                          gsl::span<const std::byte> const& src, OutputReceiver&& receiver)
+		                          std::span<const std::byte> const& src, OutputReceiver&& receiver)
 		{
 			if (src.empty())
 			{
@@ -157,7 +157,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 	private:
 		template <bool IsEncodeOne, CodePage::CodePageType ToCodePage, typename OutputReceiver>
-		static void EncodeToImpl(gsl::span<const CharType> const& src, OutputReceiver&& receiver)
+		static void EncodeToImpl(std::span<const CharType> const& src, OutputReceiver&& receiver)
 		{
 			using ToCodePageTrait = CodePage::CodePageTrait<ToCodePage>;
 			using ToCharType = typename ToCodePageTrait::CharType;
@@ -179,15 +179,15 @@ namespace Cafe::Encoding::RuntimeEncoding
 				if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
 				{
 					std::size_t advanceCount = result.AdvanceCount;
-					gsl::span<const std::byte> resultSpan;
+					std::span<const std::byte> resultSpan;
 
 					if constexpr (ToCodePageTrait::IsVariableWidth)
 					{
-						resultSpan = gsl::as_bytes(result.Result);
+						resultSpan = std::as_bytes(result.Result);
 					}
 					else
 					{
-						resultSpan = gsl::as_bytes(gsl::span(&result.Result, 1));
+						resultSpan = std::as_bytes(std::span(&result.Result, 1));
 					}
 
 					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{
@@ -212,7 +212,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 	public:
 		template <typename OutputReceiver>
-		static void EncodeOneTo(gsl::span<const CharType> const& src, CodePage::CodePageType toCodePage,
+		static void EncodeOneTo(std::span<const CharType> const& src, CodePage::CodePageType toCodePage,
 		                        OutputReceiver&& receiver)
 		{
 			if (src.empty())
@@ -233,7 +233,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 		}
 
 		template <typename OutputReceiver>
-		static void EncodeAllTo(gsl::span<const CharType> const& src, CodePage::CodePageType toCodePage,
+		static void EncodeAllTo(std::span<const CharType> const& src, CodePage::CodePageType toCodePage,
 		                        OutputReceiver&& receiver)
 		{
 			if (src.empty())
@@ -255,7 +255,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	};
 
 	template <typename OutputReceiver>
-	void EncodeOne(CodePage::CodePageType fromCodePage, gsl::span<const std::byte> const& src,
+	void EncodeOne(CodePage::CodePageType fromCodePage, std::span<const std::byte> const& src,
 	               CodePage::CodePageType toCodePage, OutputReceiver&& receiver)
 	{
 		switch (toCodePage)
@@ -264,7 +264,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	case codePageValue:                                                                              \
 		RuntimeEncoder<codePageValue>::EncodeOneFrom(fromCodePage, src, [&](auto const& result) {      \
 			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{                     \
-			    gsl::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
+			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
 		});                                                                                            \
 		break;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
@@ -275,7 +275,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	}
 
 	template <typename OutputReceiver>
-	void EncodeAll(CodePage::CodePageType fromCodePage, gsl::span<const std::byte> const& src,
+	void EncodeAll(CodePage::CodePageType fromCodePage, std::span<const std::byte> const& src,
 	               CodePage::CodePageType toCodePage, OutputReceiver&& receiver)
 	{
 		switch (toCodePage)
@@ -284,7 +284,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 	case codePageValue:                                                                              \
 		RuntimeEncoder<codePageValue>::EncodeAllFrom(fromCodePage, src, [&](auto const& result) {      \
 			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{                     \
-			    gsl::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
+			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
 		});                                                                                            \
 		break;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>

@@ -15,10 +15,10 @@ TEST_CASE("Cafe.Encoding.RuntimeEncoding", "[Encoding][RuntimeEncoding]")
 		const auto u16Str = u"\xD852\xDF62\xFEFF"_sv;
 		String<CodePage::Utf8> resultStr;
 		RuntimeEncoding::EncodeAll(
-		    CodePage::Utf16LittleEndian, gsl::as_bytes(u16Str.GetSpan()), CodePage::Utf8,
+		    CodePage::Utf16LittleEndian, std::as_bytes(u16Str.GetSpan()), CodePage::Utf8,
 		    [&](auto const& result) {
 			    REQUIRE(result.ResultCode == EncodingResultCode::Accept);
-			    resultStr.Append(gsl::span(
+			    resultStr.Append(std::span(
 			        reinterpret_cast<const typename CodePage::CodePageTrait<CodePage::Utf8>::CharType*>(
 			            result.Result.data()),
 			        result.Result.size()));

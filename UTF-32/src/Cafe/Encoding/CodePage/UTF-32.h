@@ -87,28 +87,28 @@ namespace Cafe::Encoding
 		    const typename CodePage::CodePageTrait<CodePage::Utf32LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::span(str, size + 1);
+			return std::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf32LittleEndian> operator""_les(
 		    const typename CodePage::CodePageTrait<CodePage::Utf32LittleEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return String<CodePage::Utf32LittleEndian>{ gsl::span(str, size + 1) };
+			return String<CodePage::Utf32LittleEndian>{ std::span(str, size + 1) };
 		}
 
 		constexpr StringView<CodePage::Utf32BigEndian>
 		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
 		                std::size_t size) noexcept
 		{
-			return gsl::span(str, size + 1);
+			return std::span(str, size + 1);
 		}
 
 		inline String<CodePage::Utf32BigEndian>
 		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
 		               std::size_t size) noexcept
 		{
-			return String<CodePage::Utf32BigEndian>{ gsl::span(str, size + 1) };
+			return String<CodePage::Utf32BigEndian>{ std::span(str, size + 1) };
 		}
 
 		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf32LittleEndian
@@ -119,7 +119,7 @@ namespace Cafe::Encoding
 		                                               : CodePage::Utf32BigEndian>::CharType* str,
 		    std::size_t size) noexcept
 		{
-			return gsl::span(str, size + 1);
+			return std::span(str, size + 1);
 		}
 
 		inline String<std::endian::native == std::endian::little ? CodePage::Utf32LittleEndian
@@ -132,7 +132,7 @@ namespace Cafe::Encoding
 		{
 			return String < std::endian::native == std::endian::little
 			           ? CodePage::Utf32LittleEndian
-			           : CodePage::Utf32BigEndian > { gsl::span(str, size + 1) };
+			           : CodePage::Utf32BigEndian > { std::span(str, size + 1) };
 		}
 	} // namespace StringLiterals
 } // namespace Cafe::Encoding

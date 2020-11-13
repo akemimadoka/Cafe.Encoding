@@ -134,4 +134,23 @@ namespace Cafe::Encoding
 		Y,
 		Invalid
 	};
+
+	struct UnicodeData
+	{
+		CodePointType CodeValue;
+		StringView<CodePage::Utf8> CharacterName;
+		GeneralCategory GeneralCategoryValue;
+		CanonicalCombiningClasses CanonicalCombiningClassesValue;
+		BidirectionalCategory BidirectionalCategoryValue;
+		std::optional<std::pair<DecompositionTag, std::array<CodePointType, 20>>> DecompositionMapping;
+		std::optional<std::uint8_t> DecimalDigitValue;
+		std::optional<std::uint8_t> DigitValue;
+		std::optional<Core::Misc::Ratio<unsigned>> Numeric;
+		Mirrored MirroredValue;
+		StringView<CodePage::Utf8> UnicodeName;
+		StringView<CodePage::Utf8> CommentField;
+		std::optional<CodePointType> UppercaseMapping;
+		std::optional<CodePointType> LowercaseMapping;
+		std::optional<CodePointType> TitlecaseMapping;
+	};
 } // namespace Cafe::Encoding

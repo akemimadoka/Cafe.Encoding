@@ -9,11 +9,13 @@ TEST_CASE("Cafe.Encoding.UnicodeData", "[Encoding][UnicodeData]")
 {
 	SECTION("RuntimeUnicodeData")
 	{
-		const auto digitValue = RuntimeUnicodeData::GetDigitValue('0');
+		const auto zeroUnicodeData = RuntimeUnicodeData::GetUnicodeData('0');
+		const auto digitValue = zeroUnicodeData.value().DigitValue;
 		REQUIRE(digitValue.value() == 0);
 		for (CodePointType codePoint = 0; codePoint < 50; ++codePoint)
 		{
-			const auto name = RuntimeUnicodeData::GetCharacterName(codePoint);
+			const auto unicodeData = RuntimeUnicodeData::GetUnicodeData(codePoint);
+			const auto name = unicodeData.value().CharacterName;
 			std::cout << reinterpret_cast<const char*>(name.GetData()) << std::endl;
 		}
 	}

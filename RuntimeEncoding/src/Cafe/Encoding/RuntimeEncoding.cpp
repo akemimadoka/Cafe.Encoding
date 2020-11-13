@@ -1,10 +1,10 @@
 #include <Cafe/Encoding/RuntimeEncoding.h>
 #include <Cafe/Misc/Utility.h>
 
-gsl::span<const Cafe::Encoding::CodePage::CodePageType>
+std::span<const Cafe::Encoding::CodePage::CodePageType>
 Cafe::Encoding::RuntimeEncoding::GetSupportCodePages() noexcept
 {
-	return gsl::span(Cafe::Core::Misc::SequenceToArray<AllIncludedCodePages>::Array);
+	return std::span(Cafe::Core::Misc::SequenceToArray<AllIncludedCodePages>::Array);
 }
 
 std::string_view

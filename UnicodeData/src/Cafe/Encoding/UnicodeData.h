@@ -7,6 +7,7 @@
 
 #include <array>
 #include <optional>
+#include <cassert>
 
 #include "UnicodeDataTypes.h"
 
@@ -45,44 +46,62 @@ namespace Cafe::Encoding
 		}
 	} // namespace Detail
 
-	template <CodePointType CodePointValue>
-	struct UnicodeData;
+	inline constexpr UnicodeData UnicodeDataArray[] = {
 
 #define DECOMPOSITION(tag, ...)                                                                    \
-	static constexpr auto DecompositionMapping = std::pair                                           \
-	{                                                                                                \
-		static_cast<DecompositionTag>(Detail::DecompositionTagMap::tag),                               \
-		    Detail::ConvertToArray<CodePointType>(__VA_ARGS__)                                         \
-	}
+	static_cast<DecompositionTag>(Detail::DecompositionTagMap::tag),       \
+		                        { __VA_ARGS__ }
 
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
-	template <>                                                                                      \
-	struct UnicodeData<static_cast<CodePointType>(codeValue)>                                        \
+                                                                                                   \
 	{                                                                                                \
-		static constexpr CodePointType CodeValue = static_cast<CodePointType>(codeValue);              \
-		static constexpr StringView<CodePage::Utf8> CharacterName{ u8##characterName };                \
-		static constexpr GeneralCategory GeneralCategoryValue = GeneralCategory::generalCategory;      \
-		static constexpr CanonicalCombiningClasses CanonicalCombiningClassesValue =                    \
-		    static_cast<CanonicalCombiningClasses>(canonicalCombiningClasses);                         \
-		static constexpr BidirectionalCategory BidirectionalCategoryValue =                            \
-		    BidirectionalCategory::bidirectionalCategory;                                              \
-		characterDecompositionMapping;                                                                 \
-		static constexpr std::optional<std::uint8_t> DecimalDigitValue{ decimalDigitValue };           \
-		static constexpr std::optional<std::uint8_t> DigitValue{ digitValue };                         \
-		static constexpr std::optional<Core::Misc::Ratio<unsigned>> Numeric{ numeric };                \
-		static constexpr Mirrored MirroredValue = Mirrored::mirrored;                                  \
-		static constexpr StringView<CodePage::Utf8> UnicodeName{ u8##unicodeName };                    \
-		static constexpr StringView<CodePage::Utf8> CommentField{ u8##commentField };                  \
-		static constexpr std::optional<CodePointType> UppercaseMapping{ uppercaseMapping };            \
-		static constexpr std::optional<CodePointType> LowercaseMapping{ lowercaseMapping };            \
-		static constexpr std::optional<CodePointType> TitlecaseMapping{ titlecaseMapping };            \
-	};
+		.CodeValue = static_cast<CodePointType>(codeValue),                                            \
+		.CharacterName{ u8##characterName },                                                           \
+		.GeneralCategoryValue = GeneralCategory::generalCategory,                                      \
+		.CanonicalCombiningClassesValue =                                                              \
+		    static_cast<CanonicalCombiningClasses>(canonicalCombiningClasses),                         \
+		.BidirectionalCategoryValue = BidirectionalCategory::bidirectionalCategory,                    \
+		.DecompositionMapping = { characterDecompositionMapping },                                                                 \
+		.DecimalDigitValue{ decimalDigitValue },                                                       \
+		.DigitValue{ digitValue },                                                                     \
+		.Numeric{ numeric },                                                                           \
+		.MirroredValue = Mirrored::mirrored,                                                           \
+		.UnicodeName{ u8##unicodeName },                                                               \
+		.CommentField{ u8##commentField },                                                             \
+		.UppercaseMapping{ uppercaseMapping },                                                         \
+		.LowercaseMapping{ lowercaseMapping },                                                         \
+		.TitlecaseMapping{ titlecaseMapping },                                                         \
+	},
 
 #include "Impl/UnicodeData.h"
 
-	template <CodePointType CodePointValue>
-	constexpr bool IsValidUnicodeData = Core::Misc::IsComplete<UnicodeData<CodePointValue>>;
+	};
+
+	inline constexpr auto CodePointMap = []() constexpr
+		{
+			std::array<CodePointType, MaxValidCodePoint + 1> result{};
+			CodePointType i{};
+#define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
+                       bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
+                       digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
+                       lowercaseMapping, titlecaseMapping)                                         \
+	result[codeValue] = i++;
+#include <Cafe/Encoding/Impl/UnicodeData.h>
+			return result;
+		}
+		();
+
+	constexpr UnicodeData GetUnicodeData(CodePointType codePoint) noexcept
+	{
+		assert(codePoint <= MaxValidCodePoint);
+		return UnicodeDataArray[CodePointMap[codePoint]];
+	}
+
+	constexpr bool IsValidUnicodeData(CodePointType codePoint) noexcept
+	{
+		return !codePoint || (codePoint <= MaxValidCodePoint && CodePointMap[codePoint] != 0);
+	}
 } // namespace Cafe::Encoding

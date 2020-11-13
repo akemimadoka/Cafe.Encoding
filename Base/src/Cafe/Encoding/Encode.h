@@ -2,7 +2,7 @@
 
 #include "CodePage.h"
 #include <Cafe/Misc/TypeTraits.h>
-#include <gsl/span>
+#include <span>
 
 namespace Cafe::Encoding
 {
@@ -65,7 +65,7 @@ namespace Cafe::Encoding
 
 		using ResultType = std::conditional_t<
 		    CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth,
-		    gsl::span<const typename CodePage::CodePageTrait<ToCodePageValue>::CharType>,
+		    std::span<const typename CodePage::CodePageTrait<ToCodePageValue>::CharType>,
 		    typename CodePage::CodePageTrait<ToCodePageValue>::CharType>;
 
 		template <typename... Args>
@@ -170,7 +170,7 @@ namespace Cafe::Encoding
 		using FromCodePageTrait = CodePage::CodePageTrait<FromCodePageValue>;
 		using CharType = typename FromCodePageTrait::CharType;
 		using EncodeUnitType =
-		    std::conditional_t<FromCodePageTrait::IsVariableWidth, gsl::span<const CharType>, CharType>;
+		    std::conditional_t<FromCodePageTrait::IsVariableWidth, std::span<const CharType>, CharType>;
 
 		template <typename OutputReceiver>
 		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
@@ -232,10 +232,10 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent, typename OutputReceiver>
-		static constexpr void EncodeAll(gsl::span<const CharType, Extent> const& span,
+		static constexpr void EncodeAll(std::span<const CharType, Extent> const& span,
 		                                OutputReceiver&& receiver)
 		{
-			gsl::span<const CharType> remainedSpan = span;
+			std::span<const CharType> remainedSpan = span;
 			while (!remainedSpan.empty())
 			{
 				const auto encodeUnit = [&]() constexpr
@@ -258,7 +258,7 @@ namespace Cafe::Encoding
 					else
 					{
 						// 出现错误时终止循环
-						remainedSpan = gsl::span<const CharType>{};
+						remainedSpan = std::span<const CharType>{};
 					}
 
 					std::forward<OutputReceiver>(receiver)(result);
@@ -280,7 +280,7 @@ namespace Cafe::Encoding
 	/// @remark 若 span 为空，编码视为成功，返回大小为 0
 	template <CodePage::CodePageType FromCodePageValue, CodePage::CodePageType ToCodePageValue>
 	constexpr std::pair<EncodingResultCode, std::size_t> CountEncodeSize(
-	    gsl::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> const&
+	    std::span<const typename CodePage::CodePageTrait<FromCodePageValue>::CharType> const&
 	        span) noexcept
 	{
 		auto resultCode = EncodingResultCode::Accept;

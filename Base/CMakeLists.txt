@@ -5,7 +5,7 @@ target_include_directories(Cafe.Encoding.Base INTERFACE
     $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(Cafe.Encoding.Base INTERFACE
-    Cafe.Core CONAN_PKG::ms-gsl)
+    Cafe.Core)
 
 install(TARGETS Cafe.Encoding.Base
     EXPORT Encoding.Base)
