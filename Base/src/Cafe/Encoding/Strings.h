@@ -2,8 +2,8 @@
 
 #include "Encode.h"
 #include <cassert>
-#include <span>
 #include <memory>
+#include <span>
 
 namespace Cafe::Encoding
 {
@@ -36,21 +36,20 @@ namespace Cafe::Encoding
 
 		public:
 			constexpr StringStorage() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
-			    : m_Allocator{}, m_Size{}, m_Capacity{ SsoThresholdSize }
+			    : m_Allocator{}, m_Size{}, m_Capacity{ SsoThresholdSize }, m_SsoStorage{}
 			{
-				m_SsoStorage[0] = CharType{};
 			}
 
 			constexpr explicit StringStorage(Allocator const& allocator) noexcept
-			    : m_Allocator{ allocator }, m_Size{}, m_Capacity{ SsoThresholdSize }
+			    : m_Allocator{ allocator }, m_Size{}, m_Capacity{ SsoThresholdSize }, m_SsoStorage{}
 			{
-				m_SsoStorage[0] = CharType{};
 			}
 
 			template <std::size_t Extent>
 			constexpr StringStorage(std::span<const CharType, Extent> const& src,
 			                        Allocator const& allocator = Allocator{})
-			    : m_Allocator{ allocator }, m_Size{ static_cast<std::size_t>(src.size()) }
+			    : m_Allocator{ allocator }, m_Size{ static_cast<std::size_t>(src.size()) }, m_Capacity{},
+			      m_SsoStorage{}
 			{
 				if (src.empty())
 				{
@@ -67,7 +66,8 @@ namespace Cafe::Encoding
 				if (allocatingSize > SsoThresholdSize)
 				{
 					m_Capacity = allocatingSize;
-					m_DynamicStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, m_Capacity);
+					m_DynamicStorage =
+					    std::to_address(std::allocator_traits<Allocator>::allocate(m_Allocator, m_Capacity));
 					std::copy_n(src.data(), m_Size, m_DynamicStorage);
 					m_DynamicStorage[allocatingSize - 1] = CharType{};
 				}
@@ -75,7 +75,6 @@ namespace Cafe::Encoding
 				{
 					m_Capacity = SsoThresholdSize;
 					std::copy_n(src.data(), m_Size, m_SsoStorage);
-					m_SsoStorage[allocatingSize - 1] = CharType{};
 				}
 			}
 
@@ -94,7 +93,8 @@ namespace Cafe::Encoding
 			constexpr StringStorage(
 			    StringStorage<CharType, Allocator, OtherSsoThresholdSize, OtherGrowPolicy>&&
 			        other) noexcept(SsoThresholdSize >= OtherSsoThresholdSize)
-			    : m_Allocator{ std::move(other.m_Allocator) }
+			    : m_Allocator{ std::move(other.m_Allocator) }, m_Size{}, m_Capacity{ SsoThresholdSize },
+			      m_SsoStorage{}
 			{
 				if constexpr (SsoThresholdSize >= OtherSsoThresholdSize)
 				{
@@ -116,8 +116,8 @@ namespace Cafe::Encoding
 						if (other.m_Capacity <= OtherSsoThresholdSize)
 						{
 							m_Allocator->~Allocator();
-							new (static_cast<void*>(this)) StringStorage(
-							    std::span(other.GetStorage(), other.GetSize()), other.m_Allocator);
+							new (static_cast<void*>(this))
+							    StringStorage(std::span(other.GetStorage(), other.GetSize()), other.m_Allocator);
 							other.Clear();
 						}
 						else
@@ -139,7 +139,7 @@ namespace Cafe::Encoding
 				other.Clear();
 			}
 
-			~StringStorage()
+			constexpr ~StringStorage()
 			{
 				if (IsDynamicAllocated())
 				{
@@ -242,7 +242,7 @@ namespace Cafe::Encoding
 				}
 
 				const auto newStorage =
-				    std::allocator_traits<Allocator>::allocate(m_Allocator, newCapacity);
+				    std::to_address(std::allocator_traits<Allocator>::allocate(m_Allocator, newCapacity));
 				std::copy_n(GetStorage(), m_Size, newStorage);
 				if (m_Capacity > SsoThresholdSize)
 				{
@@ -433,7 +433,8 @@ namespace Cafe::Encoding
 					}
 					else
 					{
-						const auto newStorage = std::allocator_traits<Allocator>::allocate(m_Allocator, m_Size);
+						const auto newStorage =
+						    std::to_address(std::allocator_traits<Allocator>::allocate(m_Allocator, m_Size));
 						std::copy_n(m_DynamicStorage, m_Size, newStorage);
 						std::allocator_traits<Allocator>::deallocate(m_Allocator, m_DynamicStorage, m_Capacity);
 						m_DynamicStorage = newStorage;
@@ -708,8 +709,8 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t OtherExtent>
-		[[nodiscard]] constexpr int Compare(StringView<CodePageValue, OtherExtent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr int
+		Compare(StringView<CodePageValue, OtherExtent> const& other) const noexcept
 		{
 			const auto size = GetSize(), otherSize = other.GetSize();
 			const auto minSize = std::min(size, otherSize);
@@ -752,8 +753,8 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t OtherExtent>
-		[[nodiscard]] constexpr bool EndWith(StringView<CodePageValue, OtherExtent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		EndWith(StringView<CodePageValue, OtherExtent> const& other) const noexcept
 		{
 			if (other.GetSize() > GetSize())
 			{
@@ -1146,7 +1147,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, std::size_t Extent,
 	          std::enable_if_t<Extent != std::dynamic_extent, int> = 0>
-	StaticString(StringView<CodePageValue, Extent> const& str)->StaticString<CodePageValue, Extent>;
+	StaticString(StringView<CodePageValue, Extent> const& str) -> StaticString<CodePageValue, Extent>;
 
 	template <typename T>
 	struct IsStaticStringTrait : std::false_type
@@ -1476,43 +1477,43 @@ namespace Cafe::Encoding
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator==(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator==(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() == other;
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator!=(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator!=(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() != other;
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator<(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator<(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() < other;
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator>(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator>(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() > other;
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator<=(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator<=(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() < other;
 		}
 
 		template <std::size_t Extent>
-		[[nodiscard]] constexpr bool operator>=(StringView<CodePageValue, Extent> const& other) const
-		    noexcept
+		[[nodiscard]] constexpr bool
+		operator>=(StringView<CodePageValue, Extent> const& other) const noexcept
 		{
 			return GetView() > other;
 		}
