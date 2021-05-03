@@ -18,7 +18,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 	CAFE_PUBLIC std::span<const CodePage::CodePageType> GetSupportCodePages() noexcept;
 
 	CAFE_PUBLIC std::string_view GetCodePageName(CodePage::CodePageType codePage) noexcept;
-	CAFE_PUBLIC std::optional<bool> IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
+	CAFE_PUBLIC std::optional<bool>
+	IsCodePageVariableWidth(CodePage::CodePageType codePage) noexcept;
 	CAFE_PUBLIC std::size_t GetCodePageMaxWidth(CodePage::CodePageType codePage) noexcept;
 
 	template <typename ResultUnitType>
@@ -48,10 +49,11 @@ namespace Cafe::Encoding::RuntimeEncoding
 				{
 					std::size_t dummy;
 					void* dummyPtr = const_cast<std::byte*>(src.data());
-					if (std::align(alignof(FromCharType), src.size(), dummyPtr, dummy) == src.data())
+					if (std::align(alignof(FromCharType), src.size(), dummyPtr, dummy) ==
+					    src.data())
 					{
 						return std::span(reinterpret_cast<const FromCharType*>(src.data()),
-						                      src.size() / sizeof(FromCharType));
+						                 src.size() / sizeof(FromCharType));
 					}
 					else
 					{
@@ -92,13 +94,14 @@ namespace Cafe::Encoding::RuntimeEncoding
 					{
 						resultSpan = std::span(&result.Result, 1);
 					}
-					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<CharType>{
-					    resultSpan, EncodingResultCode::Accept, advanceCount * sizeof(FromCharType) });
+					std::forward<OutputReceiver>(receiver)(
+					    RuntimeEncodingResult<CharType>{ resultSpan, EncodingResultCode::Accept,
+					                                     advanceCount * sizeof(FromCharType) });
 				}
 				else
 				{
-					std::forward<OutputReceiver>(receiver)(
-					    RuntimeEncodingResult<CharType>{ {}, GetEncodingResultCode<decltype(result)>, 0 });
+					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<CharType>{
+					    {}, GetEncodingResultCode<decltype(result)>, 0 });
 				}
 			};
 
@@ -125,7 +128,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			switch (fromCodePage)
 			{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return EncodeFromImpl<true, codePageValue>(src, std::forward<OutputReceiver>(receiver));
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
@@ -146,7 +149,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			switch (fromCodePage)
 			{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return EncodeFromImpl<false, codePageValue>(src, std::forward<OutputReceiver>(receiver));
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
@@ -195,8 +198,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 				}
 				else
 				{
-					std::forward<OutputReceiver>(receiver)(
-					    RuntimeEncodingResult<std::byte>{ {}, GetEncodingResultCode<decltype(result)>, 0 });
+					std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{
+					    {}, GetEncodingResultCode<decltype(result)>, 0 });
 				}
 			};
 
@@ -212,8 +215,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 
 	public:
 		template <typename OutputReceiver>
-		static void EncodeOneTo(std::span<const CharType> const& src, CodePage::CodePageType toCodePage,
-		                        OutputReceiver&& receiver)
+		static void EncodeOneTo(std::span<const CharType> const& src,
+		                        CodePage::CodePageType toCodePage, OutputReceiver&& receiver)
 		{
 			if (src.empty())
 			{
@@ -223,7 +226,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			switch (toCodePage)
 			{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return EncodeToImpl<true, codePageValue>(src, std::forward<OutputReceiver>(receiver));
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
@@ -233,8 +236,8 @@ namespace Cafe::Encoding::RuntimeEncoding
 		}
 
 		template <typename OutputReceiver>
-		static void EncodeAllTo(std::span<const CharType> const& src, CodePage::CodePageType toCodePage,
-		                        OutputReceiver&& receiver)
+		static void EncodeAllTo(std::span<const CharType> const& src,
+		                        CodePage::CodePageType toCodePage, OutputReceiver&& receiver)
 		{
 			if (src.empty())
 			{
@@ -244,7 +247,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 			switch (toCodePage)
 			{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return EncodeToImpl<false, codePageValue>(src, std::forward<OutputReceiver>(receiver));
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 			default:
@@ -261,11 +264,11 @@ namespace Cafe::Encoding::RuntimeEncoding
 		switch (toCodePage)
 		{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
-		RuntimeEncoder<codePageValue>::EncodeOneFrom(fromCodePage, src, [&](auto const& result) {      \
-			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{                     \
-			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
-		});                                                                                            \
+	case codePageValue:                                                                            \
+		RuntimeEncoder<codePageValue>::EncodeOneFrom(fromCodePage, src, [&](auto const& result) {  \
+			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{               \
+			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });           \
+		});                                                                                        \
 		break;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 		default:
@@ -281,11 +284,11 @@ namespace Cafe::Encoding::RuntimeEncoding
 		switch (toCodePage)
 		{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
-		RuntimeEncoder<codePageValue>::EncodeAllFrom(fromCodePage, src, [&](auto const& result) {      \
-			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{                     \
-			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });                 \
-		});                                                                                            \
+	case codePageValue:                                                                            \
+		RuntimeEncoder<codePageValue>::EncodeAllFrom(fromCodePage, src, [&](auto const& result) {  \
+			std::forward<OutputReceiver>(receiver)(RuntimeEncodingResult<std::byte>{               \
+			    std::as_bytes(result.Result), result.ResultCode, result.AdvanceCount });           \
+		});                                                                                        \
 		break;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 		default:

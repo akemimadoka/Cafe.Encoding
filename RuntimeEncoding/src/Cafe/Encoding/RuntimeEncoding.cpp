@@ -13,7 +13,7 @@ Cafe::Encoding::RuntimeEncoding::GetCodePageName(CodePage::CodePageType codePage
 	switch (codePage)
 	{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return CodePage::CodePageTrait<codePageValue>::Name;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	default:
@@ -27,7 +27,7 @@ Cafe::Encoding::RuntimeEncoding::IsCodePageVariableWidth(CodePage::CodePageType 
 	switch (codePage)
 	{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return CodePage::CodePageTrait<codePageValue>::IsVariableWidth;
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	default:
@@ -41,7 +41,7 @@ Cafe::Encoding::RuntimeEncoding::GetCodePageMaxWidth(CodePage::CodePageType code
 	switch (codePage)
 	{
 #define CAFE_CODEPAGE(codePageValue)                                                               \
-	case codePageValue:                                                                              \
+	case codePageValue:                                                                            \
 		return CodePage::GetMaxWidth<codePageValue>();
 #include <Cafe/Encoding/Config/IncludedEncoding.h>
 	default:

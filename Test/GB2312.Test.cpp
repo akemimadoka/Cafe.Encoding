@@ -21,16 +21,17 @@ TEST_CASE("Cafe.Encoding.GB2312", "[Encoding][GB2312]")
 			}
 		});
 
-		CodePage::CodePageTrait<CodePage::GB2312>::ToCodePoint(std::span("\xB2\xE2"), [](auto const& result) {
-			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
-			{
-				REQUIRE(result.AdvanceCount == 2);
-				REQUIRE(result.Result == 0x6D4B);
-			}
-			else
-			{
-				REQUIRE(false);
-			}
-		});
+		CodePage::CodePageTrait<CodePage::GB2312>::ToCodePoint(
+		    std::span("\xB2\xE2"), [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.AdvanceCount == 2);
+				    REQUIRE(result.Result == 0x6D4B);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
 	}
 }

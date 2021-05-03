@@ -60,8 +60,9 @@ namespace Cafe::Encoding
 	    : Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
 	                           Detail::AdvanceCountInfo, Detail::AlwaysOneCountInfo>
 	{
-		using Base = Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
-		                                  Detail::AdvanceCountInfo, Detail::AlwaysOneCountInfo>;
+		using Base =
+		    Core::Misc::DeriveIf<CodePage::CodePageTrait<FromCodePageValue>::IsVariableWidth,
+		                         Detail::AdvanceCountInfo, Detail::AlwaysOneCountInfo>;
 
 		using ResultType = std::conditional_t<
 		    CodePage::CodePageTrait<ToCodePageValue>::IsVariableWidth,
@@ -76,8 +77,8 @@ namespace Cafe::Encoding
 
 		template <CodePage::CodePageType OtherFromCodePageValue>
 		explicit constexpr EncodingResult(
-		    EncodingResult<OtherFromCodePageValue, ToCodePageValue, EncodingResultCode::Accept> const&
-		        other) noexcept
+		    EncodingResult<OtherFromCodePageValue, ToCodePageValue,
+		                   EncodingResultCode::Accept> const& other) noexcept
 		    : Base{ Detail::CastOrDefaultConstruct<Base>(other) }, Result{ other.Result }
 		{
 		}
@@ -128,8 +129,9 @@ namespace Cafe::Encoding
 
 		template <CodePage::CodePageType OtherFromCodePageValue,
 		          CodePage::CodePageType OtherToCodePageValue>
-		explicit constexpr EncodingResult(EncodingResult<OtherFromCodePageValue, OtherToCodePageValue,
-		                                                 EncodingResultCode::Reject> const&) noexcept
+		explicit constexpr EncodingResult(
+		    EncodingResult<OtherFromCodePageValue, OtherToCodePageValue,
+		                   EncodingResultCode::Reject> const&) noexcept
 		{
 		}
 	};
@@ -154,8 +156,8 @@ namespace Cafe::Encoding
 
 	/// @brief  用于快速获取编码结果的目标代码页的工具模板
 	template <typename ResultType>
-	constexpr CodePage::CodePageType GetToCodePage =
-	    GetEncodingResultInfoTrait<std::remove_cv_t<std::remove_reference_t<ResultType>>>::ToCodePage;
+	constexpr CodePage::CodePageType GetToCodePage = GetEncodingResultInfoTrait<
+	    std::remove_cv_t<std::remove_reference_t<ResultType>>>::ToCodePage;
 
 	/// @brief  用于快速获取编码结果的结果代码的工具模板
 	template <typename ResultType>
@@ -169,8 +171,8 @@ namespace Cafe::Encoding
 	{
 		using FromCodePageTrait = CodePage::CodePageTrait<FromCodePageValue>;
 		using CharType = typename FromCodePageTrait::CharType;
-		using EncodeUnitType =
-		    std::conditional_t<FromCodePageTrait::IsVariableWidth, std::span<const CharType>, CharType>;
+		using EncodeUnitType = std::conditional_t<FromCodePageTrait::IsVariableWidth,
+		                                          std::span<const CharType>, CharType>;
 
 		template <typename OutputReceiver>
 		static constexpr void Encode(EncodeUnitType const& encodeUnit, OutputReceiver&& receiver)
@@ -180,14 +182,15 @@ namespace Cafe::Encoding
 				if constexpr (FromCodePageTrait::IsVariableWidth)
 				{
 					std::forward<OutputReceiver>(receiver)(
-					    EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>{
+					    EncodingResult<FromCodePageValue, ToCodePageValue,
+					                   EncodingResultCode::Accept>{
 					        encodeUnit, static_cast<std::size_t>(encodeUnit.size()) });
 				}
 				else
 				{
 					std::forward<OutputReceiver>(receiver)(
-					    EncodingResult<FromCodePageValue, ToCodePageValue, EncodingResultCode::Accept>{
-					        encodeUnit });
+					    EncodingResult<FromCodePageValue, ToCodePageValue,
+					                   EncodingResultCode::Accept>{ encodeUnit });
 				}
 			}
 			else if constexpr (FromCodePageValue == CodePage::CodePoint)
@@ -207,10 +210,10 @@ namespace Cafe::Encoding
 					{
 						CodePage::CodePageTrait<ToCodePageValue>::FromCodePoint(
 						    result.Result, [&](auto const& finalResult) {
-							    auto convertedResult =
-							        static_cast<EncodingResult<FromCodePageValue, ToCodePageValue,
-							                                   GetEncodingResultCode<decltype(finalResult)>>>(
-							            finalResult);
+							    auto convertedResult = static_cast<
+							        EncodingResult<FromCodePageValue, ToCodePageValue,
+							                       GetEncodingResultCode<decltype(finalResult)>>>(
+							        finalResult);
 							    if constexpr (FromCodePageTrait::IsVariableWidth &&
 							                  GetEncodingResultCode<decltype(finalResult)> ==
 							                      EncodingResultCode::Accept)
@@ -224,7 +227,8 @@ namespace Cafe::Encoding
 					else
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    static_cast<EncodingResult<FromCodePageValue, ToCodePageValue, resultCode>>(
+						    static_cast<
+						        EncodingResult<FromCodePageValue, ToCodePageValue, resultCode>>(
 						        result));
 					}
 				});
@@ -251,7 +255,8 @@ namespace Cafe::Encoding
 				}
 				();
 				Encode(encodeUnit, [&](auto const& result) {
-					if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+					if constexpr (GetEncodingResultCode<decltype(result)> ==
+					              EncodingResultCode::Accept)
 					{
 						remainedSpan = remainedSpan.subspan(result.AdvanceCount);
 					}

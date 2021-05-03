@@ -70,7 +70,8 @@ namespace Cafe::Encoding
 					if (span.empty())
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ 0, 1 });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ 0,
+						                                                                      1 });
 						return;
 					}
 
@@ -87,38 +88,43 @@ namespace Cafe::Encoding
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ -1 });
 						break;
-					case 1:
-					{
-						const auto result = static_cast<CodePointType>(MaySwapEndian(mayBeLeadSurrogate));
+					case 1: {
+						const auto result =
+						    static_cast<CodePointType>(MaySwapEndian(mayBeLeadSurrogate));
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 1u });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result,
+						                                                                  1u });
 						break;
 					}
-					case 2:
-					{
+					case 2: {
 						if (span.size() < 2)
 						{
 							std::forward<OutputReceiver>(receiver)(
-							    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{ 0, 1 });
+							    EncodingResult<Utf16, CodePoint, EncodingResultCode::Incomplete>{
+							        0, 1 });
 							return;
 						}
 
 						const auto leadSurrogate =
 						    static_cast<CodePointType>(MaySwapEndian(mayBeLeadSurrogate));
-						const auto trailSurrogate = static_cast<CodePointType>(MaySwapEndian(span[1]));
+						const auto trailSurrogate =
+						    static_cast<CodePointType>(MaySwapEndian(span[1]));
 
 						const auto result = static_cast<CodePointType>(
-						    (((leadSurrogate - 0xD800) << 10) + (trailSurrogate - 0xDC00)) + 0x10000);
+						    (((leadSurrogate - 0xD800) << 10) + (trailSurrogate - 0xDC00)) +
+						    0x10000);
 
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result, 2u });
+						    EncodingResult<Utf16, CodePoint, EncodingResultCode::Accept>{ result,
+						                                                                  2u });
 						break;
 					}
 					}
 				}
 
 				template <typename OutputReceiver>
-				static constexpr void FromCodePoint(CodePointType codePoint, OutputReceiver&& receiver)
+				static constexpr void FromCodePoint(CodePointType codePoint,
+				                                    OutputReceiver&& receiver)
 				{
 					if (codePoint >= 0xD800 && codePoint <= 0xDFFF)
 					{
@@ -127,7 +133,8 @@ namespace Cafe::Encoding
 					}
 					else if (codePoint <= 0xFFFF)
 					{
-						const CharType result[] = { MaySwapEndian(static_cast<CharType>(codePoint)) };
+						const CharType result[] = { MaySwapEndian(
+							static_cast<CharType>(codePoint)) };
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<CodePoint, Utf16, EncodingResultCode::Accept>{
 						        std::span(result) });
@@ -136,7 +143,8 @@ namespace Cafe::Encoding
 					{
 						const auto processedCodePoint = codePoint - 0x10000;
 						const CharType result[] = {
-							MaySwapEndian(((processedCodePoint & 0b11111111110000000000) >> 10) + 0xD800),
+							MaySwapEndian(((processedCodePoint & 0b11111111110000000000) >> 10) +
+							              0xD800),
 							MaySwapEndian((processedCodePoint & 0b00000000001111111111) + 0xDC00)
 						};
 						std::forward<OutputReceiver>(receiver)(
@@ -178,22 +186,23 @@ namespace Cafe::Encoding
 			return String<CodePage::Utf16LittleEndian>{ std::span(str, size + 1) };
 		}
 
-		constexpr StringView<CodePage::Utf16BigEndian>
-		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
-		                std::size_t size) noexcept
+		constexpr StringView<CodePage::Utf16BigEndian> operator""_besv(
+		    const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
+		    std::size_t size) noexcept
 		{
 			return std::span(str, size + 1);
 		}
 
-		inline String<CodePage::Utf16BigEndian>
-		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
-		               std::size_t size) noexcept
+		inline String<CodePage::Utf16BigEndian> operator""_bes(
+		    const typename CodePage::CodePageTrait<CodePage::Utf16BigEndian>::CharType* str,
+		    std::size_t size) noexcept
 		{
 			return String<CodePage::Utf16BigEndian>{ std::span(str, size + 1) };
 		}
 
-		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
-		                                                                : CodePage::Utf16BigEndian>
+		constexpr StringView<std::endian::native == std::endian::little
+		                         ? CodePage::Utf16LittleEndian
+		                         : CodePage::Utf16BigEndian>
 		operator""_sv(
 		    const typename CodePage::CodePageTrait<std::endian::native == std::endian::little
 		                                               ? CodePage::Utf16LittleEndian

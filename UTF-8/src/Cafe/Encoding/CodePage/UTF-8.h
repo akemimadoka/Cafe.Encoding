@@ -114,9 +114,10 @@ namespace Cafe::Encoding
 						return;
 					}
 
-					const auto secondCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[1]);
-					const auto result =
-					    static_cast<CodePointType>(((codeValue & 0x1F) << 6) + (secondCodeUnit & 0x3F));
+					const auto secondCodeUnit =
+					    static_cast<std::make_unsigned_t<CharType>>(span[1]);
+					const auto result = static_cast<CodePointType>(((codeValue & 0x1F) << 6) +
+					                                               (secondCodeUnit & 0x3F));
 
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 2u });
@@ -131,10 +132,12 @@ namespace Cafe::Encoding
 						return;
 					}
 
-					const auto secondCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[1]);
+					const auto secondCodeUnit =
+					    static_cast<std::make_unsigned_t<CharType>>(span[1]);
 					const auto thirdCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[2]);
-					const auto result = static_cast<CodePointType>(
-					    ((codeValue & 0x0F) << 12) + ((secondCodeUnit & 0x3F) << 6) + (thirdCodeUnit & 0x3F));
+					const auto result = static_cast<CodePointType>(((codeValue & 0x0F) << 12) +
+					                                               ((secondCodeUnit & 0x3F) << 6) +
+					                                               (thirdCodeUnit & 0x3F));
 
 					if (result >= 0xD800 && result <= 0xDFFF)
 					{
@@ -145,7 +148,8 @@ namespace Cafe::Encoding
 					else
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result, 3u });
+						    EncodingResult<Utf8, CodePoint, EncodingResultCode::Accept>{ result,
+						                                                                 3u });
 					}
 				}
 				else if ((codeValue & 0xF8) == 0xF0 && codeValue <= 0xF4)
@@ -158,9 +162,11 @@ namespace Cafe::Encoding
 						return;
 					}
 
-					const auto secondCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[1]);
+					const auto secondCodeUnit =
+					    static_cast<std::make_unsigned_t<CharType>>(span[1]);
 					const auto thirdCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[2]);
-					const auto fourthCodeUnit = static_cast<std::make_unsigned_t<CharType>>(span[3]);
+					const auto fourthCodeUnit =
+					    static_cast<std::make_unsigned_t<CharType>>(span[3]);
 					const auto result = static_cast<CodePointType>(
 					    ((codeValue & 0x07) << 18) + ((secondCodeUnit & 0x3F) << 12) +
 					    ((thirdCodeUnit & 0x3F) << 6) + (fourthCodeUnit & 0x3F));
@@ -190,27 +196,32 @@ namespace Cafe::Encoding
 				}
 				else if (codePoint <= 0x0007FF)
 				{
-					const CharType result[]{ static_cast<CharType>(0xC0 + ((codePoint & 0x0007C0) >> 6)),
-						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
+					const CharType result[]{ static_cast<CharType>(0xC0 +
+						                                           ((codePoint & 0x0007C0) >> 6)),
+						                     static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
 					        std::span(result) });
 				}
 				else if (codePoint <= 0x00D7FF || (codePoint >= 0x00E000 && codePoint <= 0x00FFFF))
 				{
-					const CharType result[]{ static_cast<CharType>(0xE0 + ((codePoint & 0x00F000) >> 12)),
-						                       static_cast<CharType>(0x80 + ((codePoint & 0x000FC0) >> 6)),
-						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
+					const CharType result[]{
+						static_cast<CharType>(0xE0 + ((codePoint & 0x00F000) >> 12)),
+						static_cast<CharType>(0x80 + ((codePoint & 0x000FC0) >> 6)),
+						static_cast<CharType>(0x80 + (codePoint & 0x00003F))
+					};
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
 					        std::span(result) });
 				}
 				else if (codePoint >= 0x010000 && codePoint <= 0x10FFFF)
 				{
-					const CharType result[]{ static_cast<CharType>(0xF0 + ((codePoint & 0x1C0000) >> 18)),
-						                       static_cast<CharType>(0x80 + ((codePoint & 0x03F000) >> 12)),
-						                       static_cast<CharType>(0x80 + ((codePoint & 0x000FC0) >> 6)),
-						                       static_cast<CharType>(0x80 + (codePoint & 0x00003F)) };
+					const CharType result[]{
+						static_cast<CharType>(0xF0 + ((codePoint & 0x1C0000) >> 18)),
+						static_cast<CharType>(0x80 + ((codePoint & 0x03F000) >> 12)),
+						static_cast<CharType>(0x80 + ((codePoint & 0x000FC0) >> 6)),
+						static_cast<CharType>(0x80 + (codePoint & 0x00003F))
+					};
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf8, EncodingResultCode::Accept>{
 					        std::span(result) });
@@ -278,7 +289,8 @@ namespace Cafe::Encoding
 		}
 
 		inline String<CodePage::Utf8>
-		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str, std::size_t size)
+		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
+		               std::size_t size)
 		{
 			return String<CodePage::Utf8>{ std::span(str, size + 1) };
 		}
@@ -288,9 +300,9 @@ namespace Cafe::Encoding
 #define CAFE_UTF8_IMPL(str) u8##str
 #define CAFE_UTF8(str) CAFE_UTF8_IMPL(str)
 #define CAFE_UTF8_SV(str)                                                                          \
-	::Cafe::Encoding::StringView<::Cafe::Encoding::CodePage::Utf8, std::size(CAFE_UTF8(str))>        \
-	{                                                                                                \
-		CAFE_UTF8(str)                                                                                 \
+	::Cafe::Encoding::StringView<::Cafe::Encoding::CodePage::Utf8, std::size(CAFE_UTF8(str))>      \
+	{                                                                                              \
+		CAFE_UTF8(str)                                                                             \
 	}
 
 #endif

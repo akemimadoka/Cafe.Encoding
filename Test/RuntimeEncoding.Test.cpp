@@ -19,7 +19,8 @@ TEST_CASE("Cafe.Encoding.RuntimeEncoding", "[Encoding][RuntimeEncoding]")
 		    [&](auto const& result) {
 			    REQUIRE(result.ResultCode == EncodingResultCode::Accept);
 			    resultStr.Append(std::span(
-			        reinterpret_cast<const typename CodePage::CodePageTrait<CodePage::Utf8>::CharType*>(
+			        reinterpret_cast<
+			            const typename CodePage::CodePageTrait<CodePage::Utf8>::CharType*>(
 			            result.Result.data()),
 			        result.Result.size()));
 		    });

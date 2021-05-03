@@ -6,8 +6,8 @@
 #include <Cafe/Misc/Utility.h>
 
 #include <array>
-#include <optional>
 #include <cassert>
+#include <optional>
 
 #include "UnicodeDataTypes.h"
 
@@ -49,31 +49,33 @@ namespace Cafe::Encoding
 	inline constexpr UnicodeData UnicodeDataArray[] = {
 
 #define DECOMPOSITION(tag, ...)                                                                    \
-	static_cast<DecompositionTag>(Detail::DecompositionTagMap::tag),       \
-		                        { __VA_ARGS__ }
+	static_cast<DecompositionTag>(Detail::DecompositionTagMap::tag),                               \
+	{                                                                                              \
+		__VA_ARGS__                                                                                \
+	}
 
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
                                                                                                    \
-	{                                                                                                \
-		.CodeValue = static_cast<CodePointType>(codeValue),                                            \
-		.CharacterName{ u8##characterName },                                                           \
-		.GeneralCategoryValue = GeneralCategory::generalCategory,                                      \
-		.CanonicalCombiningClassesValue =                                                              \
-		    static_cast<CanonicalCombiningClasses>(canonicalCombiningClasses),                         \
-		.BidirectionalCategoryValue = BidirectionalCategory::bidirectionalCategory,                    \
-		.DecompositionMapping = { characterDecompositionMapping },                                                                 \
-		.DecimalDigitValue{ decimalDigitValue },                                                       \
-		.DigitValue{ digitValue },                                                                     \
-		.Numeric{ numeric },                                                                           \
-		.MirroredValue = Mirrored::mirrored,                                                           \
-		.UnicodeName{ u8##unicodeName },                                                               \
-		.CommentField{ u8##commentField },                                                             \
-		.UppercaseMapping{ uppercaseMapping },                                                         \
-		.LowercaseMapping{ lowercaseMapping },                                                         \
-		.TitlecaseMapping{ titlecaseMapping },                                                         \
+	{                                                                                              \
+		.CodeValue = static_cast<CodePointType>(codeValue),                                        \
+		.CharacterName{ u8##characterName },                                                       \
+		.GeneralCategoryValue = GeneralCategory::generalCategory,                                  \
+		.CanonicalCombiningClassesValue =                                                          \
+		    static_cast<CanonicalCombiningClasses>(canonicalCombiningClasses),                     \
+		.BidirectionalCategoryValue = BidirectionalCategory::bidirectionalCategory,                \
+		.DecompositionMapping = { characterDecompositionMapping },                                 \
+		.DecimalDigitValue{ decimalDigitValue },                                                   \
+		.DigitValue{ digitValue },                                                                 \
+		.Numeric{ numeric },                                                                       \
+		.MirroredValue = Mirrored::mirrored,                                                       \
+		.UnicodeName{ u8##unicodeName },                                                           \
+		.CommentField{ u8##commentField },                                                         \
+		.UppercaseMapping{ uppercaseMapping },                                                     \
+		.LowercaseMapping{ lowercaseMapping },                                                     \
+		.TitlecaseMapping{ titlecaseMapping },                                                     \
 	},
 
 #include "Impl/UnicodeData.h"
@@ -81,18 +83,18 @@ namespace Cafe::Encoding
 	};
 
 	inline constexpr auto CodePointMap = []() constexpr
-		{
-			std::array<CodePointType, MaxValidCodePoint + 1> result{};
-			CodePointType i{};
+	{
+		std::array<CodePointType, MaxValidCodePoint + 1> result{};
+		CodePointType i{};
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \
                        digitValue, numeric, mirrored, unicodeName, commentField, uppercaseMapping, \
                        lowercaseMapping, titlecaseMapping)                                         \
 	result[codeValue] = i++;
-#include <Cafe/Encoding/Impl/UnicodeData.h>
-			return result;
-		}
-		();
+#include "Impl/UnicodeData.h"
+		return result;
+	}
+	();
 
 	constexpr UnicodeData GetUnicodeData(CodePointType codePoint) noexcept
 	{

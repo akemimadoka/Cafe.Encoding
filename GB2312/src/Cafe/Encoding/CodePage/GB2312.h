@@ -86,7 +86,8 @@ namespace Cafe::Encoding
 					if (span.size() < 2)
 					{
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<GB2312, CodePoint, EncodingResultCode::Incomplete>{ 0, 1 });
+						    EncodingResult<GB2312, CodePoint, EncodingResultCode::Incomplete>{ 0,
+						                                                                       1 });
 						return;
 					}
 
@@ -94,16 +95,19 @@ namespace Cafe::Encoding
 					const auto unit = static_cast<std::uint16_t>(firstUnit) << 8 | secondUnit;
 					const auto index = unit - 0x8140;
 
-					if (index >= std::size(GB2312ToUnicodeMapping) || !GB2312ToUnicodeMapping[index])
+					if (index >= std::size(GB2312ToUnicodeMapping) ||
+					    !GB2312ToUnicodeMapping[index])
 					{
 						std::forward<OutputReceiver>(receiver)(
 						    EncodingResult<GB2312, CodePoint, EncodingResultCode::Reject>{});
 					}
 					else
 					{
-						const auto result = static_cast<CodePointType>(GB2312ToUnicodeMapping[index]);
+						const auto result =
+						    static_cast<CodePointType>(GB2312ToUnicodeMapping[index]);
 						std::forward<OutputReceiver>(receiver)(
-						    EncodingResult<GB2312, CodePoint, EncodingResultCode::Accept>{ result, 2u });
+						    EncodingResult<GB2312, CodePoint, EncodingResultCode::Accept>{ result,
+						                                                                   2u });
 					}
 				}
 			}
@@ -143,7 +147,7 @@ namespace Cafe::Encoding
 					}
 
 					const CharType result[]{ static_cast<CharType>((mappedUnit & 0xFF00) >> 8),
-						                       static_cast<CharType>(mappedUnit & 0xFF) };
+						                     static_cast<CharType>(mappedUnit & 0xFF) };
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, GB2312, EncodingResultCode::Accept>{
 					        std::span(result) });

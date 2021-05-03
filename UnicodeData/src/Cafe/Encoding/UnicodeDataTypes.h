@@ -142,7 +142,8 @@ namespace Cafe::Encoding
 		GeneralCategory GeneralCategoryValue;
 		CanonicalCombiningClasses CanonicalCombiningClassesValue;
 		BidirectionalCategory BidirectionalCategoryValue;
-		std::optional<std::pair<DecompositionTag, std::array<CodePointType, 20>>> DecompositionMapping;
+		std::optional<std::pair<DecompositionTag, std::array<CodePointType, 20>>>
+		    DecompositionMapping;
 		std::optional<std::uint8_t> DecimalDigitValue;
 		std::optional<std::uint8_t> DigitValue;
 		std::optional<Core::Misc::Ratio<unsigned>> Numeric;

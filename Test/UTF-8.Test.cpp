@@ -21,15 +21,16 @@ TEST_CASE("Cafe.Encoding.UTF-8", "[Encoding][UTF-8]")
 			}
 		});
 
-		CodePage::CodePageTrait<CodePage::Utf8>::ToCodePoint(std::span(u8"\xEF\xBB\xBF"), [](auto const& result) {
-			if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
-			{
-				REQUIRE(result.Result == 0xFEFF);
-			}
-			else
-			{
-				REQUIRE(false);
-			}
-		});
+		CodePage::CodePageTrait<CodePage::Utf8>::ToCodePoint(
+		    std::span(u8"\xEF\xBB\xBF"), [](auto const& result) {
+			    if constexpr (GetEncodingResultCode<decltype(result)> == EncodingResultCode::Accept)
+			    {
+				    REQUIRE(result.Result == 0xFEFF);
+			    }
+			    else
+			    {
+				    REQUIRE(false);
+			    }
+		    });
 	}
 }

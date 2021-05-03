@@ -57,7 +57,8 @@ namespace Cafe::Encoding
 				}
 
 				template <typename OutputReceiver>
-				static constexpr void FromCodePoint(CodePointType codePoint, OutputReceiver&& receiver)
+				static constexpr void FromCodePoint(CodePointType codePoint,
+				                                    OutputReceiver&& receiver)
 				{
 					std::forward<OutputReceiver>(receiver)(
 					    EncodingResult<CodePoint, Utf32, EncodingResultCode::Accept>{
@@ -97,22 +98,23 @@ namespace Cafe::Encoding
 			return String<CodePage::Utf32LittleEndian>{ std::span(str, size + 1) };
 		}
 
-		constexpr StringView<CodePage::Utf32BigEndian>
-		operator""_besv(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
-		                std::size_t size) noexcept
+		constexpr StringView<CodePage::Utf32BigEndian> operator""_besv(
+		    const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
+		    std::size_t size) noexcept
 		{
 			return std::span(str, size + 1);
 		}
 
-		inline String<CodePage::Utf32BigEndian>
-		operator""_bes(const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
-		               std::size_t size) noexcept
+		inline String<CodePage::Utf32BigEndian> operator""_bes(
+		    const typename CodePage::CodePageTrait<CodePage::Utf32BigEndian>::CharType* str,
+		    std::size_t size) noexcept
 		{
 			return String<CodePage::Utf32BigEndian>{ std::span(str, size + 1) };
 		}
 
-		constexpr StringView<std::endian::native == std::endian::little ? CodePage::Utf32LittleEndian
-		                                                                : CodePage::Utf32BigEndian>
+		constexpr StringView<std::endian::native == std::endian::little
+		                         ? CodePage::Utf32LittleEndian
+		                         : CodePage::Utf32BigEndian>
 		operator""_sv(
 		    const typename CodePage::CodePageTrait<std::endian::native == std::endian::little
 		                                               ? CodePage::Utf32LittleEndian
