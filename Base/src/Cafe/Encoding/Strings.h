@@ -4,6 +4,8 @@
 #include <cassert>
 #include <memory>
 #include <span>
+#include <stdexcept>
+#include <string> // 提供转换等支持
 
 namespace Cafe::Encoding
 {

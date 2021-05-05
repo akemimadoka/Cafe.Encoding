@@ -1,0 +1,3 @@
+[submodule "CafeCommon"]
+	path = CafeCommon
+	url = https://github.com/akemimadoka/CafeCommon.git
