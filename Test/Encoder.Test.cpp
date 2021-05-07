@@ -1,6 +1,6 @@
 #include <Cafe/Encoding/Encode.h>
 #include <Cafe/Encoding/Strings.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #if __has_include(<Cafe/Encoding/CodePage/UTF-8.h>) && __has_include(<Cafe/Encoding/CodePage/UTF-16.h>)
 

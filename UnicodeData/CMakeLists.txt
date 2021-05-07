@@ -26,7 +26,7 @@ target_link_libraries(Cafe.Encoding.UnicodeData PUBLIC
     Cafe.Encoding.UTF-8)
 
 # 若用户需要直接使用定义，也会需要提升常量求值限制，这似乎不是常见的场景
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     target_compile_options(Cafe.Encoding.UnicodeData PUBLIC "-fconstexpr-steps=4000000")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(Cafe.Encoding.UnicodeData PUBLIC "/constexpr:steps4000000")

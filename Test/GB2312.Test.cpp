@@ -1,5 +1,5 @@
 #include <Cafe/Encoding/CodePage/GB2312.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <cstring>
 
 using namespace Cafe;

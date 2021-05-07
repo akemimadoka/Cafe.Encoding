@@ -635,6 +635,12 @@ namespace Cafe::Encoding
 		{
 		}
 
+		[[nodiscard]] static constexpr StringView
+		FromNullTerminatedStr(const CharType* nullTerminatedStr) noexcept
+		{
+			return std::span(nullTerminatedStr, StrLen<CodePageValue>(nullTerminatedStr) + 1);
+		}
+
 		constexpr StringView(StringView const&) noexcept = default;
 		constexpr StringView(StringView&&) noexcept = default;
 		constexpr StringView& operator=(StringView const&) noexcept = default;
@@ -959,7 +965,9 @@ namespace Cafe::Encoding
 		if constexpr (Extent1 == Extent2 || Extent1 == std::dynamic_extent ||
 		              Extent2 == std::dynamic_extent)
 		{
-			if (a.GetData() == b.GetData() && a.GetSize() == b.GetSize())
+			// 在常量求值环境下，直接比对指针可能不受支持
+			if (!std::is_constant_evaluated() && a.GetSize() == b.GetSize() &&
+			    a.GetData() == b.GetData())
 			{
 				return true;
 			}
@@ -1047,15 +1055,16 @@ namespace Cafe::Encoding
 		{
 		}
 
-		constexpr StaticString(CharType ch, std::size_t count = 1) noexcept : m_Size{ count }
+		constexpr StaticString(CharType ch, std::size_t count = 1) noexcept
+		    : m_Size{ count }, m_Storage{}
 		{
 			std::fill_n(m_Storage.data(), count, ch);
-			m_Storage[count] = CharType{};
 		}
 
 		template <std::size_t Extent,
 		          std::enable_if_t<Extent == std::dynamic_extent || Extent <= MaxSize, int> = 0>
 		constexpr StaticString(StringView<CodePageValue, Extent> const& str) noexcept
+		    : m_Size{}, m_Storage{}
 		{
 			Assign(str);
 		}
@@ -1178,7 +1187,7 @@ namespace Cafe::Encoding
 	constexpr bool IsStaticString = IsStaticStringTrait<T>::value;
 
 	/// @brief  字符串
-	/// @remark 内部存储保证以 0 结尾，即 GetData()[GetSize()] 保证有效且为 0
+	/// @remark 内部存储保证以 0 结尾，即 GetData()[GetSize() - 1] 保证有效且为 0
 	///         空字符串大小为 1，若可行应使用 IsEmpty() 判断是否为空
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy>
@@ -1259,6 +1268,17 @@ namespace Cafe::Encoding
 		                 Allocator const& allocator = Allocator{})
 		    : String{ str.GetSpan(), allocator }
 		{
+		}
+
+		template <std::size_t N>
+		constexpr String(const CharType (&array)[N]) : String{ std::span(array) }
+		{
+		}
+
+		[[nodiscard]] static constexpr String
+		FromNullTerminatedStr(const CharType* nullTerminatedStr)
+		{
+			return ViewType<>::FromNullTerminatedStr(nullTerminatedStr);
 		}
 
 		template <typename OtherAllocator, std::size_t OtherSsoThresholdSize,

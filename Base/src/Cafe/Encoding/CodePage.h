@@ -27,7 +27,7 @@ namespace Cafe::Encoding
 		/// @brief  获取以指定代码页能表示单个任意码点的最大宽度
 		/// @remark 由于定长代码页不要求提供 MaxWidth 成员因此提供此函数简单获取
 		template <CodePageType CodePageValue>
-		constexpr std::size_t GetMaxWidth() noexcept
+		[[nodiscard]] constexpr std::size_t GetMaxWidth() noexcept
 		{
 			if constexpr (CodePageTrait<CodePageValue>::IsVariableWidth)
 			{
@@ -39,6 +39,28 @@ namespace Cafe::Encoding
 			}
 		}
 	} // namespace CodePage
+
+	// 模仿标准库 std::strlen，为保持一致性，返回的值不计入结尾 0
+	template <CodePage::CodePageType CodePageValue>
+	[[nodiscard]] constexpr std::size_t
+	StrLen(const typename CodePage::CodePageTrait<CodePageValue>::CharType* nullTerminatedStr)
+	{
+		if constexpr (requires {
+			              CodePage::CodePageTrait<CodePageValue>::StrLen(nullTerminatedStr);
+		              })
+		{
+			return CodePage::CodePageTrait<CodePageValue>::StrLen(nullTerminatedStr);
+		}
+		else
+		{
+			std::size_t size{};
+			while (*nullTerminatedStr++)
+			{
+				++size;
+			}
+			return size;
+		}
+	}
 
 	/// @brief  码点类型
 	/// @remark Unicode 中码点范围为 [0, 0x10FFFF]，因此一个 std::uint32_t 总能容纳任何单个码点

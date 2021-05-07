@@ -1,5 +1,5 @@
 #include <Cafe/Encoding/RuntimeEncoding.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <cstring>
 #include <vector>
 

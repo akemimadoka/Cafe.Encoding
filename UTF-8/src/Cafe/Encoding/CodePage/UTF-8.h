@@ -275,7 +275,7 @@ namespace Cafe::Encoding
 			return std::span(str, size + 1);
 		}
 
-		inline String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
+		constexpr String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
 		{
 			return String<CodePage::Utf8>{ std::span(str, size + 1) };
 		}
@@ -288,7 +288,7 @@ namespace Cafe::Encoding
 			return std::span(str, size + 1);
 		}
 
-		inline String<CodePage::Utf8>
+		constexpr String<CodePage::Utf8>
 		operator""_u8s(const CodePage::CodePageTrait<CodePage::Utf8>::CharType* str,
 		               std::size_t size)
 		{

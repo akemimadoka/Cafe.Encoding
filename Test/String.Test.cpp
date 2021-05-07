@@ -1,5 +1,5 @@
 #include <Cafe/Encoding/Strings.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <map>
 #include <unordered_map>
 
@@ -67,6 +67,9 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 		REQUIRE(!str3.IsDynamicAllocated());
 		REQUIRE(str4 == CAFE_UTF8_SV("abcabcabcabcabcabc"));
 
+		String<CodePage::Utf8> str5(u8"test");
+		REQUIRE(str5 == u8"test"_u8sv);
+
 		{
 			std::unordered_map<StringView<CodePage::Utf8>, String<CodePage::Utf8>> map;
 			map.emplace(CAFE_UTF8_SV("abc"), CAFE_UTF8_SV("def"));
@@ -115,6 +118,20 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 			const auto iter = map.find(CAFE_UTF8_SV("abc"));
 			REQUIRE(iter != map.end());
 			REQUIRE(iter->second == CAFE_UTF8_SV("def"));
+		}
+
+		{
+			const auto nullTerminatedStr = u8"Null";
+			const auto strV = StringView<CodePage::Utf8>::FromNullTerminatedStr(nullTerminatedStr);
+			REQUIRE(strV == CAFE_UTF8_SV("Null"));
+			const auto string = String<CodePage::Utf8>::FromNullTerminatedStr(nullTerminatedStr);
+			REQUIRE(string == strV);
+		}
+
+		{
+			constexpr auto constStr = u8"Const"_u8s;
+			static_assert(constStr.GetSize() == 6);
+			static_assert(constStr == u8"Const"_u8sv);
 		}
 	}
 }
