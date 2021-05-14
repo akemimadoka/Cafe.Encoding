@@ -18,12 +18,17 @@ constexpr const char Prologue[] =
 #define DECOMPOSITON(tag, ...)
 #endif
 
+#ifndef NUMERIC
+#define NUMERIC(...)
+#endif
+
 )";
 
 constexpr const char Epilogue[] =
     R"(
 #undef UNICODE_DEFINE
 #undef DECOMPOSITON
+#undef NUMERIC
 )";
 
 int main(int argc, char** argv)
@@ -66,10 +71,10 @@ int main(int argc, char** argv)
 		const auto generalCategory = match[3].str();
 		const auto canonicalCombiningClasses = match[4].str();
 		const auto bidirectionalCategory = match[5].str();
-		const auto characterDecompositionMapping = match[6].str();
+		auto characterDecompositionMapping = match[6].str();
 		const auto decimalDigitValue = match[7].str();
 		const auto digitValue = match[8].str();
-		const auto numeric = match[9].str();
+		auto numeric = match[9].str();
 		const auto mirrored = match[10].str();
 		const auto unicodeName = match[11].str();
 		const auto commentField = match[12].str();
@@ -96,16 +101,25 @@ int main(int argc, char** argv)
 			                                 std::regex{ R"( ([\dA-Z]{4,6}))" }, ", 0x$1"));
 			result.append(")");
 		}
-		else
+		else if (!characterDecompositionMapping.empty())
 		{
-			assert(characterDecompositionMapping.empty());
+			std::replace(characterDecompositionMapping.begin(), characterDecompositionMapping.end(), ' ', ',');
+			result.append("DECOMPOSITON(canonical, ").append(characterDecompositionMapping).append(")");
 		}
 
 		result.append(", ");
 
 		result.append(decimalDigitValue).append(", ");
 		result.append(digitValue).append(", ");
-		result.append(numeric).append(", ");
+		if (numeric.empty())
+		{
+			result.append(", ");
+		}
+		else
+		{
+			std::replace(numeric.begin(), numeric.end(), '/', ',');
+			result.append("NUMERIC(").append(numeric).append("), ");
+		}
 		result.append(mirrored).append(", ");
 		result.append(1, '\"').append(unicodeName).append("\", ");
 		result.append(1, '\"').append(commentField).append("\", ");

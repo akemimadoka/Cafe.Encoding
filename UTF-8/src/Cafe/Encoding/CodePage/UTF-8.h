@@ -3,6 +3,7 @@
 
 #include <Cafe/Encoding/Encode.h>
 #include <Cafe/Encoding/Strings.h>
+#include <Cafe/Misc/Utility.h>
 
 namespace Cafe::Encoding
 {
@@ -269,11 +270,19 @@ namespace Cafe::Encoding
 #if __cpp_char8_t >= 201811L
 		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
 
+#	if __cpp_nontype_template_args >= 201911L
+		template <Core::Misc::ArrayBinder<char8_t>::Result Array>
+		constexpr StringView<CodePage::Utf8, Array.Size> operator""_sv() noexcept
+		{
+			return std::span(Array.Content);
+		}
+#	else
 		constexpr StringView<CodePage::Utf8> operator""_sv(const char8_t* str,
 		                                                   std::size_t size) noexcept
 		{
 			return std::span(str, size + 1);
 		}
+#	endif
 
 		constexpr String<CodePage::Utf8> operator""_s(const char8_t* str, std::size_t size)
 		{

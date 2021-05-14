@@ -6,6 +6,8 @@ target_include_directories(Cafe.Encoding.GB2312 INTERFACE
 
 target_link_libraries(Cafe.Encoding.GB2312 INTERFACE Cafe.Encoding.Base)
 
+AddCafeSharedFlags(Cafe.Encoding.GB2312)
+
 install(TARGETS Cafe.Encoding.GB2312
     EXPORT Encoding.GB2312)
 

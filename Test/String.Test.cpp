@@ -15,6 +15,9 @@ TEST_CASE("Cafe.Encoding.Base.String", "[Encoding][String]")
 {
 	SECTION("String test")
 	{
+		const auto strLiteral = u8"Literal"_sv;
+		REQUIRE(strLiteral == CAFE_UTF8_SV("Literal"));
+
 		const auto str = CAFE_UTF8_SV("ababc");
 		REQUIRE(str.GetSize() == 6);
 		REQUIRE(str == str);

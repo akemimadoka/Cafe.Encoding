@@ -11,6 +11,8 @@ target_link_libraries(Cafe.Encoding.Base INTERFACE
 
 target_compile_features(Cafe.Encoding.Base INTERFACE cxx_std_20)
 
+AddCafeSharedFlags(Cafe.Encoding.Base)
+
 install(TARGETS Cafe.Encoding.Base
     EXPORT Encoding.Base
 )

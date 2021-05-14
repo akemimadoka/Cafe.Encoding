@@ -900,10 +900,8 @@ namespace Cafe::Encoding
 			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
 		}
 
-		template <typename Allocator = std::allocator<CharType>,
-		          std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
-		          typename GrowPolicy = Detail::DefaultGrowPolicy>
-		String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
+		template <std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize, typename GrowPolicy = Detail::DefaultGrowPolicy, typename Allocator = std::allocator<CharType>>
+		constexpr String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
 		ToString(Allocator allocator = std::allocator<CharType>{}) const;
 
 		template <typename Allocator>
@@ -1744,8 +1742,8 @@ namespace Cafe::Encoding
 	// 注：两个 StringView 不可相加
 
 	template <CodePage::CodePageType CodePageValue, std::size_t Extent>
-	template <typename Allocator, std::size_t SsoThresholdSize, typename GrowPolicy>
-	String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
+	template <std::size_t SsoThresholdSize, typename GrowPolicy, typename Allocator>
+	constexpr String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
 	       GrowPolicy>
 	StringView<CodePageValue, Extent>::ToString(Allocator allocator) const
 	{

@@ -32,6 +32,8 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(Cafe.Encoding.UnicodeData PUBLIC "/constexpr:steps4000000")
 endif()
 
+AddCafeSharedFlags(Cafe.Encoding.UnicodeData)
+
 install(TARGETS Cafe.Encoding.UnicodeData
     EXPORT Encoding.UnicodeData)
 

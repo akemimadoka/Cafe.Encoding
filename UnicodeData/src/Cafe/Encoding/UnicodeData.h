@@ -18,6 +18,7 @@ namespace Cafe::Encoding
 		using DecompositionTagUnderlyingType = std::underlying_type_t<DecompositionTag>;
 		enum class DecompositionTagMap : DecompositionTagUnderlyingType
 		{
+			canonical = static_cast<DecompositionTagUnderlyingType>(DecompositionTag::Canonical),
 			font = static_cast<DecompositionTagUnderlyingType>(DecompositionTag::Font),
 			noBreak = static_cast<DecompositionTagUnderlyingType>(DecompositionTag::NoBreak),
 			initial = static_cast<DecompositionTagUnderlyingType>(DecompositionTag::Initial),
@@ -53,6 +54,8 @@ namespace Cafe::Encoding
 	{                                                                                              \
 		__VA_ARGS__                                                                                \
 	}
+
+#define NUMERIC(...) Core::Misc::Ratio<std::uintmax_t>(__VA_ARGS__)
 
 #define UNICODE_DEFINE(codeValue, characterName, generalCategory, canonicalCombiningClasses,       \
                        bidirectionalCategory, characterDecompositionMapping, decimalDigitValue,    \

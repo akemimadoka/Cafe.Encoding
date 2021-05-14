@@ -110,6 +110,7 @@ namespace Cafe::Encoding
 	{
 		Invalid,
 
+		Canonical,// Canonical equivalence
 		Font,     // A font variant (e.g. a blackletter form)
 		NoBreak,  // A no-break version of a space or hyphen
 		Initial,  // An initial presentation form (Arabic)
@@ -146,7 +147,7 @@ namespace Cafe::Encoding
 		    DecompositionMapping;
 		std::optional<std::uint8_t> DecimalDigitValue;
 		std::optional<std::uint8_t> DigitValue;
-		std::optional<Core::Misc::Ratio<unsigned>> Numeric;
+		std::optional<Core::Misc::Ratio<std::uintmax_t>> Numeric;
 		Mirrored MirroredValue;
 		StringView<CodePage::Utf8> UnicodeName;
 		StringView<CodePage::Utf8> CommentField;

@@ -3,6 +3,7 @@
 
 #include <Cafe/Encoding/Encode.h>
 #include <Cafe/Encoding/Strings.h>
+#include <Cafe/Misc/Utility.h>
 #include <cassert>
 
 namespace Cafe::Encoding
@@ -200,6 +201,20 @@ namespace Cafe::Encoding
 			return String<CodePage::Utf16BigEndian>{ std::span(str, size + 1) };
 		}
 
+#if __cpp_nontype_template_args >= 201911L
+		template <Core::Misc::ArrayBinder<typename CodePage::CodePageTrait<
+		    std::endian::native == std::endian::little
+		        ? CodePage::Utf16LittleEndian
+		        : CodePage::Utf16BigEndian>::CharType>::Result Array>
+		constexpr StringView<std::endian::native == std::endian::little
+		                         ? CodePage::Utf16LittleEndian
+		                         : CodePage::Utf16BigEndian,
+		                     Array.Size>
+		operator""_sv() noexcept
+		{
+			return std::span(Array.Content);
+		}
+#else
 		constexpr StringView<std::endian::native == std::endian::little
 		                         ? CodePage::Utf16LittleEndian
 		                         : CodePage::Utf16BigEndian>
@@ -211,6 +226,7 @@ namespace Cafe::Encoding
 		{
 			return std::span(str, size + 1);
 		}
+#endif
 
 		inline String<std::endian::native == std::endian::little ? CodePage::Utf16LittleEndian
 		                                                         : CodePage::Utf16BigEndian>

@@ -6,6 +6,8 @@ target_include_directories(Cafe.Encoding.UTF-16 INTERFACE
 
 target_link_libraries(Cafe.Encoding.UTF-16 INTERFACE Cafe.Encoding.Base)
 
+AddCafeSharedFlags(Cafe.Encoding.UTF-16)
+
 install(TARGETS Cafe.Encoding.UTF-16
     EXPORT Encoding.UTF-16)
 

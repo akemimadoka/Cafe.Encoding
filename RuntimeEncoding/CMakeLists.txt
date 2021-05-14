@@ -23,6 +23,8 @@ foreach(encoding ${CAFE_ENCODING_INCLUDE_ENCODING_LIST})
         "Cafe.Encoding.${encoding}")
 endforeach()
 
+AddCafeSharedFlags(Cafe.Encoding.RuntimeEncoding)
+
 install(TARGETS Cafe.Encoding.RuntimeEncoding
     EXPORT Encoding.RuntimeEncoding)
 
