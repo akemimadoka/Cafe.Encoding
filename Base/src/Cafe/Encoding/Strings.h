@@ -900,26 +900,28 @@ namespace Cafe::Encoding
 			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
 		}
 
-		template <std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize, typename GrowPolicy = Detail::DefaultGrowPolicy, typename Allocator = std::allocator<CharType>>
-		constexpr String<UsingCodePage, Allocator, SsoThresholdSize, GrowPolicy>
+		template <std::size_t SsoThresholdSize = Detail::DefaultSsoThresholdSize,
+		          typename GrowPolicy = Detail::DefaultGrowPolicy,
+		          typename Allocator = std::allocator<CharType>>
+		[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 		ToString(Allocator allocator = std::allocator<CharType>{}) const;
 
 		template <typename Allocator>
-		std::basic_string<CharType, std::char_traits<CharType>, Allocator>
+		[[nodiscard]] std::basic_string<CharType, std::char_traits<CharType>, Allocator>
 		ToStdString(Allocator allocator = std::allocator<CharType>{}) const noexcept
 		{
 			return std::basic_string<CharType, std::char_traits<CharType>, Allocator>(
 			    GetData(), GetSize(), std::move(allocator));
 		}
 
-		constexpr std::basic_string_view<CharType> ToStdStringView() const noexcept
+		[[nodiscard]] constexpr std::basic_string_view<CharType> ToStdStringView() const noexcept
 		{
 			return { GetData(), GetSize() };
 		}
 
 		/// @brief  判断字符串视图是否以 0 结尾
 		/// @remark 空视图视为不以 0 结尾
-		constexpr bool IsNullTerminated() const noexcept
+		[[nodiscard]] constexpr bool IsNullTerminated() const noexcept
 		{
 			return !m_Span.empty() && m_Span[m_Span.size() - 1] == CharType{};
 		}
@@ -933,7 +935,7 @@ namespace Cafe::Encoding
 	///     const auto str = AsView<CodePage::Utf8>(u8"abcd");
 	/// @endcode
 	template <CodePage::CodePageType CodePageValue, std::size_t N>
-	constexpr StringView<CodePageValue, N>
+	[[nodiscard]] constexpr StringView<CodePageValue, N>
 	AsView(const typename CodePage::CodePageTrait<CodePageValue>::CharType (&arr)[N]) noexcept
 	{
 		return { arr };
@@ -941,7 +943,7 @@ namespace Cafe::Encoding
 
 	/// @brief  用于快速从 C 风格字符串构造字符串视图
 	template <CodePage::CodePageType CodePageValue, std::size_t N>
-	constexpr StringView<CodePageValue, N>
+	[[nodiscard]] constexpr StringView<CodePageValue, N>
 	AsView(std::span<const typename CodePage::CodePageTrait<CodePageValue>::CharType, N> const&
 	           span) noexcept
 	{
@@ -1671,7 +1673,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy, std::size_t Extent>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
 	operator+=(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>& a,
 	           StringView<CodePageValue, Extent> const& b)
 	{
@@ -1681,7 +1683,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&
 	operator+=(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>& a,
 	           String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
 	{
@@ -1691,7 +1693,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy, std::size_t Extent>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& a,
 	          StringView<CodePageValue, Extent> const& b)
 	{
@@ -1702,7 +1704,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& a,
 	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
 	{
@@ -1711,7 +1713,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy, std::size_t Extent>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&& a,
 	          StringView<CodePageValue, Extent> const& b)
 	{
@@ -1721,7 +1723,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	operator+(String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>&& a,
 	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
 	{
@@ -1730,7 +1732,7 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, typename Allocator,
 	          std::size_t SsoThresholdSize, typename GrowPolicy, std::size_t Extent>
-	constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	operator+(StringView<CodePageValue, Extent> const& a,
 	          String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy> const& b)
 	{
@@ -1743,17 +1745,17 @@ namespace Cafe::Encoding
 
 	template <CodePage::CodePageType CodePageValue, std::size_t Extent>
 	template <std::size_t SsoThresholdSize, typename GrowPolicy, typename Allocator>
-	constexpr String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
-	       GrowPolicy>
+	[[nodiscard]] constexpr String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>
 	StringView<CodePageValue, Extent>::ToString(Allocator allocator) const
 	{
-		return String<StringView<CodePageValue, Extent>::UsingCodePage, Allocator, SsoThresholdSize,
-		              GrowPolicy>{ *this, std::move(allocator) };
+		return String<CodePageValue, Allocator, SsoThresholdSize, GrowPolicy>{
+			*this, std::move(allocator)
+		};
 	}
 
 #if __cpp_nontype_template_parameter_class >= 201806L
 	template <CodePage::CodePageType ToCodePage, auto Str>
-	constexpr auto StaticEncode() noexcept
+	[[nodiscard]] constexpr auto StaticEncode() noexcept
 	{
 		constexpr auto FromCodePage = decltype(Str)::UsingCodePage;
 		StaticString<ToCodePage, CountEncodeSize<FromCodePage, ToCodePage>(Str.GetSpan())> result{};
@@ -1786,7 +1788,7 @@ namespace std
 	struct hash<Cafe::Encoding::StringView<CodePageValue, Extent>>
 	{
 		// 使用 BKDR hash 算法
-		constexpr std::size_t
+		[[nodiscard]] constexpr std::size_t
 		operator()(Cafe::Encoding::StringView<CodePageValue, Extent> const& value) const noexcept
 		{
 			constexpr std::size_t seed = 131;
@@ -1807,13 +1809,13 @@ namespace std
 		using transparent_key_equal = std::equal_to<>;
 
 		template <std::size_t Extent>
-		constexpr std::size_t
+		[[nodiscard]] constexpr std::size_t
 		operator()(Cafe::Encoding::StringView<CodePageValue, Extent> const& value) const noexcept
 		{
 			return hash<Cafe::Encoding::StringView<CodePageValue, Extent>>{}(value);
 		}
 
-		constexpr std::size_t
+		[[nodiscard]] constexpr std::size_t
 		operator()(Cafe::Encoding::StaticString<CodePageValue, MaxSize> const& value) const noexcept
 		{
 			return operator()(value.GetView());
@@ -1827,14 +1829,15 @@ namespace std
 		using transparent_key_equal = std::equal_to<>;
 
 		template <std::size_t Extent>
-		constexpr std::size_t
+		[[nodiscard]] constexpr std::size_t
 		operator()(Cafe::Encoding::StringView<CodePageValue, Extent> const& value) const noexcept
 		{
 			return hash<Cafe::Encoding::StringView<CodePageValue, Extent>>{}(value);
 		}
 
-		std::size_t operator()(Cafe::Encoding::String<CodePageValue, Allocator, SsoThresholdSize,
-		                                              GrowPolicy> const& value) const noexcept
+		[[nodiscard]] std::size_t
+		operator()(Cafe::Encoding::String<CodePageValue, Allocator, SsoThresholdSize,
+		                                  GrowPolicy> const& value) const noexcept
 		{
 			return operator()(value.GetView());
 		}
