@@ -110,23 +110,23 @@ namespace Cafe::Encoding
 	{
 		Invalid,
 
-		Canonical,// Canonical equivalence
-		Font,     // A font variant (e.g. a blackletter form)
-		NoBreak,  // A no-break version of a space or hyphen
-		Initial,  // An initial presentation form (Arabic)
-		Medial,   // A medial presentation form (Arabic)
-		Final,    // A final presentation form (Arabic)
-		Isolated, // An isolated presentation form (Arabic)
-		Circle,   // An encircled form
-		Super,    // A superscript form
-		Sub,      // A subscript form
-		Vertical, // A vertical layout presentation form
-		Wide,     // A wide (or zenkaku) compatibility character
-		Narrow,   // A narrow (or hankaku) compatibility character
-		Small,    // A small variant form (CNS compatibility)
-		Square,   // A CJK squared font variant
-		Fraction, // A vulgar fraction form
-		Compat,   // Otherwise unspecified compatibility character
+		Canonical, // Canonical equivalence
+		Font,      // A font variant (e.g. a blackletter form)
+		NoBreak,   // A no-break version of a space or hyphen
+		Initial,   // An initial presentation form (Arabic)
+		Medial,    // A medial presentation form (Arabic)
+		Final,     // A final presentation form (Arabic)
+		Isolated,  // An isolated presentation form (Arabic)
+		Circle,    // An encircled form
+		Super,     // A superscript form
+		Sub,       // A subscript form
+		Vertical,  // A vertical layout presentation form
+		Wide,      // A wide (or zenkaku) compatibility character
+		Narrow,    // A narrow (or hankaku) compatibility character
+		Small,     // A small variant form (CNS compatibility)
+		Square,    // A CJK squared font variant
+		Fraction,  // A vulgar fraction form
+		Compat,    // Otherwise unspecified compatibility character
 	};
 
 	enum class Mirrored : std::uint8_t

@@ -103,8 +103,11 @@ int main(int argc, char** argv)
 		}
 		else if (!characterDecompositionMapping.empty())
 		{
-			std::replace(characterDecompositionMapping.begin(), characterDecompositionMapping.end(), ' ', ',');
-			result.append("DECOMPOSITON(canonical, ").append(characterDecompositionMapping).append(")");
+			std::replace(characterDecompositionMapping.begin(), characterDecompositionMapping.end(),
+			             ' ', ',');
+			result.append("DECOMPOSITON(canonical, ")
+			    .append(characterDecompositionMapping)
+			    .append(")");
 		}
 
 		result.append(", ");
