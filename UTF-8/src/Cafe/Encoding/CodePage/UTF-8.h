@@ -243,6 +243,14 @@ namespace Cafe::Encoding
 		using Trait = CodePage::CodePageTrait<CodePage::Utf8>;
 		using CharType = typename Trait::CharType;
 
+		template <typename OutputReceiver>
+		static constexpr void Encode(std::span<const CharType> const& encodeUnit,
+		                             OutputReceiver&& receiver)
+		{
+			EncoderBase<CodePage::Utf8, ToCodePageValue>::Encode(
+			    encodeUnit, std::forward<OutputReceiver>(receiver));
+		}
+
 		template <std::size_t Extent, typename OutputReceiver>
 		static constexpr void EncodeAll(std::span<const CharType, Extent> const& span,
 		                                OutputReceiver&& receiver)
@@ -264,9 +272,6 @@ namespace Cafe::Encoding
 
 	inline namespace StringLiterals
 	{
-		// 字符串自定义字面量的 size 参数不包含结尾的空字符
-		// TODO: 考虑使用模板以推断长度信息
-
 #if __cpp_char8_t >= 201811L
 		static_assert(std::is_same_v<CodePage::CodePageTrait<CodePage::Utf8>::CharType, char8_t>);
 
@@ -277,6 +282,7 @@ namespace Cafe::Encoding
 			return std::span(Array.Content);
 		}
 #else
+		// 字符串自定义字面量的 size 参数不包含结尾的空字符
 		constexpr StringView<CodePage::Utf8> operator""_sv(const char8_t* str,
 		                                                   std::size_t size) noexcept
 		{

@@ -28,6 +28,13 @@ TEST_CASE("Cafe.Encoding.RuntimeEncoding", "[Encoding][RuntimeEncoding]")
 		constexpr auto expectedOutput = CAFE_UTF8_SV("\xF0\xA4\xAD\xA2\xEF\xBB\xBF");
 		REQUIRE(resultStr.GetSize() == expectedOutput.GetSize());
 		REQUIRE(resultStr == expectedOutput);
+
+		std::byte expectedOutput2[expectedOutput.GetSize()];
+		const auto result = RuntimeEncoding::EncodeAllToSpan(CodePage::Utf16LittleEndian, std::as_bytes(u16Str.GetSpan()), CodePage::Utf8, expectedOutput2);
+		REQUIRE(result.ResultCode == RuntimeEncoding::RuntimeEncodingResultCode::Accept);
+		REQUIRE(result.ConsumeCount == u16Str.GetSize() * sizeof(char16_t));
+		REQUIRE(result.ProduceCount == expectedOutput.GetSize());
+		REQUIRE(std::memcmp(expectedOutput2, expectedOutput.GetSpan().data(), expectedOutput.GetSize()) == 0);
 	}
 }
 #endif

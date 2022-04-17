@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CodePage.h"
+#include <Cafe/Misc/ControlFlow.h>
 #include <Cafe/Misc/TypeTraits.h>
 #include <span>
 
@@ -240,7 +241,8 @@ namespace Cafe::Encoding
 		                                OutputReceiver&& receiver)
 		{
 			std::span<const CharType> remainedSpan = span;
-			while (!remainedSpan.empty())
+			bool userRequestBreak = false;
+			while (!remainedSpan.empty() && !userRequestBreak)
 			{
 				const auto encodeUnit = [&]() constexpr
 				{
@@ -266,7 +268,14 @@ namespace Cafe::Encoding
 						remainedSpan = std::span<const CharType>{};
 					}
 
-					std::forward<OutputReceiver>(receiver)(result);
+					if constexpr (Core::Misc::IsCallableReturningControlFlow<OutputReceiver, decltype(result)>::value)
+					{
+						userRequestBreak = std::forward<OutputReceiver>(receiver)(result).IsBreak();
+					}
+					else
+					{
+						std::forward<OutputReceiver>(receiver)(result);
+					}
 				});
 			}
 		}

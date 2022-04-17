@@ -60,7 +60,7 @@ namespace Cafe::Encoding::RuntimeEncoding
 						auto size = src.size() / sizeof(FromCharType);
 						if constexpr (IsEncodeOne && FromCodePageTrait::IsVariableWidth)
 						{
-							const auto testWidth = FromCodePageTrait::GetWidth(src[0]);
+							const auto testWidth = FromCodePageTrait::GetWidth(static_cast<FromCharType>(src[0]));
 							if (testWidth > 0)
 							{
 								size = testWidth;
@@ -296,4 +296,35 @@ namespace Cafe::Encoding::RuntimeEncoding
 			return;
 		}
 	}
+
+	enum class RuntimeEncodingResultCode
+	{
+		Accept = static_cast<int>(EncodingResultCode::Accept),
+		Incomplete = static_cast<int>(EncodingResultCode::Incomplete),
+		Reject = static_cast<int>(EncodingResultCode::Reject),
+
+		BufferTooSmall,
+	};
+
+	struct RuntimeEncodingToSpanResult
+	{
+		RuntimeEncodingResultCode ResultCode;
+		std::size_t ConsumeCount;
+		std::size_t ProduceCount;
+	};
+
+	RuntimeEncodingToSpanResult EncodeOneToSpan(CodePage::CodePageType fromCodePage,
+	                                            std::span<const std::byte> const& src,
+	                                            CodePage::CodePageType toCodePage,
+	                                            std::span<std::byte> const& dst);
+
+	RuntimeEncodingToSpanResult EncodeAllToSpan(CodePage::CodePageType fromCodePage,
+	                                            std::span<const std::byte> const& src,
+	                                            CodePage::CodePageType toCodePage,
+	                                            std::span<std::byte> const& dst);
+
+	RuntimeEncodingToSpanResult EncodeAllToSpanWithReplacement(
+	    CodePage::CodePageType fromCodePage, std::span<const std::byte> const& src,
+	    CodePage::CodePageType toCodePage, std::span<std::byte> const& dst,
+	    std::span<std::byte> const& replacement);
 } // namespace Cafe::Encoding::RuntimeEncoding

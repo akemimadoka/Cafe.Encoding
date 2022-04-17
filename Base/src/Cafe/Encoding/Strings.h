@@ -892,7 +892,14 @@ namespace Cafe::Encoding
 
 		template <std::size_t OtherExtent>
 		[[nodiscard]] constexpr std::size_t
-		Find(StringView<CodePageValue, OtherExtent> const& pattern) const
+		Find(StringView<CodePageValue, OtherExtent> const& pattern) const noexcept
+		{
+			return NaiveFind(pattern);
+		}
+
+		template <std::size_t OtherExtent>
+		[[nodiscard]] constexpr std::size_t
+		FindWithCache(StringView<CodePageValue, OtherExtent> const& pattern) const
 		    noexcept(OtherExtent != std::dynamic_extent)
 		{
 			return Find(pattern, pattern.CreateFindingCache().GetCacheContent());
