@@ -32,4 +32,4 @@ if (CAFE_ENCODING_INCLUDE_RUNTIME_ENCODING)
         Cafe.Encoding.RuntimeEncoding)
 endif()
 
-ParseAndAddCatchTests(Cafe.Encoding.Test)
+catch_discover_tests(Cafe.Encoding.Test)
